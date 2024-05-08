@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
 import "./globals.css";
-import { cookies } from "next/headers";
-
-const inter = Inter({ subsets: ["latin"] });
+import CoinLogo from "@assets/images/coin.png";
+import Providers from "./components/Providers";
+import GoogleSignInButton from "./components/SignInButton";
+import Image from "next/image";
 
 export const metadata: Metadata = {
   title: "Create Next App",
@@ -15,25 +15,18 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const cookieStore = cookies();
-  const loginId = cookieStore.get("gambaId");
-  const authToken = cookieStore.get("authToken");
-
-  if (loginId && authToken) {
-    console.log("Logged in");
-  }else{
-    console.log("Not logged in");
-  }
 
   return (
     <html lang="en">
-      <body className={inter.className}>
-        <nav>
-          <a href="/">Home</a>
-          <a href="/gamba">Gamba</a>
-          <a href="/login">Login</a>
+      <body className="font-DOS">
+        <Providers>
+        <nav className="flex gap-4 px-4 py-2 items-center justify-between">
+          <a href="/"><Image src={CoinLogo} width={32} alt="coin_logo"/></a>
+          <div></div>
+          <GoogleSignInButton />
         </nav>
         {children}
+        </Providers>
       </body>
     </html>
   );

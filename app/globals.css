@@ -18,11 +18,26 @@
 
 body {
   color: rgb(var(--foreground-rgb));
-  background: #FF8A00;
+  background: rgb(156, 156, 156);
 }
 
 @layer utilities {
   .text-balance {
     text-wrap: balance;
   }
+}
+
+@font-face {
+  font-family: "CrayonLibre";
+  src: url("./assets/fonts/CrayonLibre.ttf");
+}
+
+@font-face {
+  font-family: "Microsoft Sans Serif";
+  src: url(./assets/fonts/MS-Sans-Serif.ttf);
+}
+
+@font-face {
+  font-family: "Perfect DOS VGA";
+  src: url(./assets/fonts/Perfect-DOS-VGA.ttf);
 }
