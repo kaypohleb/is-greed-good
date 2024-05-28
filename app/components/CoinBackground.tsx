@@ -86,18 +86,15 @@ export default function CoinBackground() {
         }
       }
     };
-    return () => {
-      //clear canvas
-      const canvas = canvasRef.current;
-      if (!canvas) return;
-      const ctx = canvas.getContext("2d");
-      if (!ctx) return;
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-    };
   }, [active]);
 
   return (
-    <div className="fixed w-full h-full z-[-1] top-0 left-0">
+    <div
+      className="absolute w-full h-full top-0 left-0"
+      style={{
+        zIndex: -1,
+      }}
+    >
       <canvas ref={canvasRef} className="w-full h-full" />
     </div>
   );

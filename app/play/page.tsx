@@ -73,7 +73,7 @@ export default function Gamba() {
 
   function test100(machineSelected: number) {
     const tempMachinePress = machinePresses[machineSelected];
-    const tempMachineSeed = machineSeeds[machineSelected];
+    // const tempMachineSeed = machineSeeds[machineSelected];
     const tempResults: number[] = [];
     for (let i = 0; i < 100; i++) {
       const machinePressed = tempMachinePress + i;
