@@ -1,12 +1,21 @@
 import { useSession } from "next-auth/react";
-import LinkButton from "./components/LinkButton";
-import TutorialWindow from "./components/TutorialWindow";
-import CoinBackground from "./components/CoinBackground";
-import Window from "./components/Window";
+import LinkButton from "@components/LinkButton";
+import TutorialWindow from "@components/TutorialWindow";
+import Window from "@components/Window";
+import FallingSpriteBackground from "@components/FallingSpriteBackground";
 export default function Home() {
   return (
-    <main className="text-black w-full h-screen-nav flex flex-col items-center justify-center coinbg gap-4">
-      <CoinBackground />
+    <main className="relative text-black w-full h-screen-nav flex flex-col items-center justify-center coinbg gap-4">
+      <FallingSpriteBackground
+        zIndex={-1}
+        spriteXSize={160}
+        spriteYSize={160}
+        numberOfSprites={16}
+        acceleration={0.01}
+        displayXSize={48}
+        displayYSize={48}
+        startingYPos={-160}
+      />
       <Window title="">
         <div className="flex flex-col items-center justify-center coinbg gap-4 p-4">
           <div className="text-[64px] font-arcade">is greed good?</div>

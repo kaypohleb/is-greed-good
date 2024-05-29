@@ -9,9 +9,17 @@ type CoinState = {
   state: number;
 };
 
-export default function CoinBackground() {
+export default function CoinSplash() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [active, setActive] = useState(false);
+
+  useEffect(() => {
+    if (active) {
+      setTimeout(() => {
+        setActive(false);
+      }, 5000);
+    }
+  }, [active]);
 
   useEffect(() => {
     //fix devicePixelRatio for bluriness
@@ -34,6 +42,7 @@ export default function CoinBackground() {
       console.log("coin loaded");
       setActive(true);
     };
+    let handle = 0;
 
     const drawloop = () => {
       const canvas = canvasRef.current;
@@ -42,7 +51,9 @@ export default function CoinBackground() {
       if (!ctx) return;
 
       if (active) {
-        requestAnimationFrame(drawloop);
+        handle = requestAnimationFrame(drawloop);
+      } else {
+        cancelAnimationFrame(handle);
       }
 
       ctx.clearRect(0, 0, canvas.width, canvas.height);
