@@ -55,7 +55,7 @@ export default function Gamba() {
     () =>
       [...Array(machineNumber)]
         .map(() => {
-          return [genYieldProbabilities(rand) * 0.7, genYieldMultiplier(rand)];
+          return [genYieldProbabilities(rand) * 0.5, genYieldMultiplier(rand)];
         })
         .sort(() => randPos() - 0.5),
     [rand, randPos]
