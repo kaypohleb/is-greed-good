@@ -97,7 +97,7 @@ export default function Gamba() {
   );
 
   //if user is logged in, get user amount from server
-  const [userAmt, setUserAmt] = useState<number>(1000);
+  const [userAmt, setUserAmt] = useState<number>(10000);
   //phase 0: game phase
   //phase 1: end phase
   const [userPhase, setUserPhase] = useState<number>(0);
