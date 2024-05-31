@@ -1,4 +1,4 @@
-export const YIELD_MULTIPLIERS = [2, 3, 4, 5, 10];
+export const YIELD_MULTIPLIERS = [2, 4, 5, 10, 50];
 export const JACKPOT_YIELD_MULTIPLIERS = [
   200, 300, 400, 500, 600, 700, 800, 900, 1000,
 ];

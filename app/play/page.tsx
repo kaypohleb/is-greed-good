@@ -61,17 +61,17 @@ export default function Gamba() {
             case 2:
               probability *= 0.5;
               break;
-            case 3:
+            case 4:
               probability *= 0.3;
               break;
-            case 4:
-              probability *= 0.1;
-              break;
             case 5:
-              probability *= 0.05;
+              probability *= 0.2;
               break;
             case 10:
-              probability *= 0.01;
+              probability *= 0.1;
+              break;
+            case 50:
+              probability *= 0.05;
               break;
           }
           return [probability, multiplier];
