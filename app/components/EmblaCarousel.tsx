@@ -63,3 +63,8 @@ const EmblaCarousel: React.FC<PropType> = (props) => {
 };
 
 export default EmblaCarousel;
+
+//CELEBRATE ONE BY ONE
+//SHOW COIN AMT IF WIN
+//SKIP
+//SHOW COIN AMT IF WIN

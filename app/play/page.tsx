@@ -59,19 +59,19 @@ export default function Gamba() {
           let probability = genYieldProbabilities(rand);
           switch (multiplier) {
             case 2:
-              probability *= 0.5;
+              probability *= 0.45;
               break;
             case 4:
-              probability *= 0.3;
+              probability *= 0.225;
               break;
             case 5:
-              probability *= 0.2;
+              probability *= 0.18;
               break;
             case 10:
-              probability *= 0.1;
+              probability *= 0.009;
               break;
             case 50:
-              probability *= 0.05;
+              probability *= 0.018;
               break;
           }
           return [probability, multiplier];
@@ -105,6 +105,14 @@ export default function Gamba() {
   const [machineRollAmts, setMachineRollAmts] = useState<number[]>(
     [...Array(machineNumber)].map(() => {
       return ALLOWED_ROLL_AMOUNTS[0];
+    })
+  );
+
+  const [machineMultKnown, setMachineMultKnown] = useState<boolean[]>(
+    [...Array(machineNumber)].map((_, index) => {
+      return results[index].some(
+        (result) => result < machineSettings[index][0]
+      );
     })
   );
 
@@ -331,14 +339,17 @@ export default function Gamba() {
   }, [userAmt]);
 
   useEffect(() => {
-    if (machineRollAmts.some((bet) => bet > userAmt)) {
-      setMachineRollAmts((prev) => {
-        return prev.map((bet) => {
-          return bet > userAmt ? userAmt : bet;
+    results.map((result, index) => {
+      if (machineMultKnown[index]) return;
+      if (result.some((res) => res < machineSettings[index][0])) {
+        setMachineMultKnown((prev) => {
+          const newMultKnown = [...prev];
+          newMultKnown[index] = true;
+          return newMultKnown;
         });
-      });
-    }
-  }, [machineRollAmts, userAmt]);
+      }
+    });
+  }, [machineMultKnown, machineSettings, results]);
 
   return machineSettings.length && machineSeeds.length ? (
     <div className="flex flex-col gap-5 items-center justify-center">
@@ -410,10 +421,8 @@ export default function Gamba() {
                             {(machineSettings[index][0] * 100).toFixed(2)}
                           </div>
                         ) : null}
-                        {debug ? (
-                          <div>
-                            Yield Multiplier: {machineSettings[index][1]}
-                          </div>
+                        {debug || machineMultKnown[index] ? (
+                          <div>Multiplier: {machineSettings[index][1]}</div>
                         ) : null}
                         {debug ? <div>Seed: {seed}</div> : null}
                         {debug ? (
