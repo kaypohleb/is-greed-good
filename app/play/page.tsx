@@ -10,21 +10,20 @@ import { useEffect, useMemo, useState } from "react";
 import seedrandom from "seedrandom";
 
 const OPTIONS: EmblaOptionsType = { loop: true };
-const PHASES = ["Exploration", "Results"];
 const BASE_BET = 100;
-const INCREMENT_BET = 100;
-const MAX_BET = 10000;
-const BONUS_TOKENS: { [key: string]: number } = {
-  500: 100,
-  1000: 300,
-  4000: 1000,
+const PHASES = ["GAME", "RESULTS"];
+const ALLOWED_ROLL_AMOUNTS = [1, 5, 10, 100];
+const BONUS_TOKENS_AFTER_ROLLS: { [key: string]: number } = {
+  10: 100,
+  50: 300,
+  200: 1000,
 };
 
 export default function Gamba() {
   const { data: session } = useSession();
   const searchParams = useSearchParams();
 
-  let userId = "hello";
+  let userId = "randomUser";
   let debug = searchParams.get("hiddendebug") || false;
 
   //console.log(session);
@@ -46,7 +45,7 @@ export default function Gamba() {
   const randPos = seedrandom(userId || new Date().getTime().toString());
   const machineNumber = 5;
 
-  const [machinePresses, setMachinePresses] = useState<number[]>(
+  const [machineRolls, setMachineRolls] = useState<number[]>(
     [...Array(machineNumber)].map(() => {
       return 0;
     })
@@ -67,7 +66,7 @@ export default function Gamba() {
         dt +
         (machineSettings[index][0] * 100).toFixed(0) +
         machineSettings[index][1].toString() +
-        machinePresses[index]
+        machineRolls[index]
       );
     });
   });
@@ -80,25 +79,20 @@ export default function Gamba() {
 
   //if user is logged in, get user amount from server
   const [userAmt, setUserAmt] = useState<number>(1000);
-  //phase 0: exploration phase
+  //phase 0: game phase
   //phase 1: end phase
   const [userPhase, setUserPhase] = useState<number>(0);
-  const [machineBetAmts, setMachineBetAmts] = useState<number[]>(
-    [...Array(machineNumber)].map(() => {
-      return BASE_BET;
-    })
-  );
 
-  const [totalMachineBetAmts, setTotalMachineBetAmts] = useState<number[]>(
+  const [machineRollAmts, setMachineRollAmts] = useState<number[]>(
     [...Array(machineNumber)].map(() => {
-      return 0;
+      return ALLOWED_ROLL_AMOUNTS[0];
     })
   );
 
   const [bonusClaimed, setBonusClaimed] = useState<boolean[][]>(
     [...Array(machineNumber)].map((_, index) => {
-      return Object.keys(BONUS_TOKENS).map((base, idx) => {
-        return totalMachineBetAmts[index] >= parseInt(base);
+      return Object.keys(BONUS_TOKENS_AFTER_ROLLS).map((base, idx) => {
+        return machineRollAmts[index] >= parseInt(base);
       });
     })
   );
@@ -107,9 +101,9 @@ export default function Gamba() {
   const [previousResult, setPreviousResult] = useState<boolean>(false);
   const [winStreak, setWinStreak] = useState<number>(0);
   const [longestWinStreak, setLongestWinStreak] = useState<number>(0);
-  //grant bonus yield if exploitation phase
   //grant bonus tokens if amount of bet tokens on it 3 tiers 100, 250, 500
   const [machineSelected, setMachineSelected] = useState<number>(0);
+  const [lastestRollsResults, setLatestRollsResults] = useState<boolean[]>([]);
 
   //for debugging purposes
   function play1(machineSelected: number) {
@@ -117,13 +111,8 @@ export default function Gamba() {
     setUserAmt((prev) => {
       return prev - 1;
     });
-    setTotalMachineBetAmts((prev) => {
-      const newTotalBets = [...prev];
-      newTotalBets[machineSelected] = newTotalBets[machineSelected] + 1;
-      return newTotalBets;
-    });
     //TODO make sure to get machine press as a request FIRST FROM SERVER TO PREVENT MULTI PRESS AND MULTI-TAB SIGN-IN
-    const machinePressed = machinePresses[machineSelected] + 1;
+    const machinePressed = machineRolls[machineSelected] + 1;
     setMachineSeeds((prev) => {
       const newSeeds = [...prev];
       newSeeds[machineSelected] =
@@ -134,7 +123,7 @@ export default function Gamba() {
       return newSeeds;
     });
 
-    setMachinePresses((prev) => {
+    setMachineRolls((prev) => {
       const newPresses = [...prev];
       newPresses[machineSelected] = machinePressed;
       return newPresses;
@@ -157,12 +146,7 @@ export default function Gamba() {
 
   //for debugging purposes
   function play100(machineSelected: number) {
-    const tempMachinePress = machinePresses[machineSelected];
-    setTotalMachineBetAmts((prev) => {
-      const newTotalBets = [...prev];
-      newTotalBets[machineSelected] = newTotalBets[machineSelected] + 100;
-      return newTotalBets;
-    });
+    const tempMachinePress = machineRolls[machineSelected];
     const tempResults: number[] = [];
     for (let i = 0; i < 100; i++) {
       setUserAmt((prev) => {
@@ -180,7 +164,7 @@ export default function Gamba() {
         tempResults.push(result);
       }
     }
-    setMachinePresses((prev) => {
+    setMachineRolls((prev) => {
       const newPresses = [...prev];
       newPresses[machineSelected] = tempMachinePress + 100;
       return newPresses;
@@ -204,66 +188,76 @@ export default function Gamba() {
     });
   }
 
-  function playBet(machineSelected: number, betAmt: number) {
-    if (userPhase > 1 && userAmt < betAmt && userAmt > 0) return;
-    setUserAmt((prev) => {
-      return prev - betAmt;
-    });
-    setTotalMachineBetAmts((prev) => {
-      const newTotalBets = [...prev];
-      newTotalBets[machineSelected] = newTotalBets[machineSelected] + betAmt;
-      return newTotalBets;
-    });
+  function playRolls(machineSelected: number, rollAmts: number) {
+    const tempMachinePress = machineRolls[machineSelected];
+    const tempResults: number[] = [];
+    if (userPhase > 1 && userAmt < rollAmts * BASE_BET && userAmt > 0) return;
     //GET MACHINE PRESSES FIRST FROM SERVER TO PREVENT MULTI PRESS AND MULTI-TAB SIGN-IN
-    const machinePressed = machinePresses[machineSelected] + 1;
+    for (let i = 0; i < rollAmts; i++) {
+      setUserAmt((prev) => {
+        return prev - BASE_BET;
+      });
+      const machinePressed = tempMachinePress + i;
+      const machineSeed =
+        dt +
+        (machineSettings[machineSelected][0] * 100).toFixed(0) +
+        machineSettings[machineSelected][1].toString() +
+        machinePressed;
+
+      if (machineSeeds[machineSelected]) {
+        const result = seedrandom(machineSeed)();
+        tempResults.push(result);
+        if (result < machineSettings[machineSelected][0]) {
+          setUserAmt((prev) => {
+            return prev + machineSettings[machineSelected][1] * BASE_BET;
+          });
+          setWinStreak((prev) => {
+            return prev + 1;
+          });
+          if (winStreak > longestWinStreak) {
+            setLongestWinStreak(winStreak);
+          }
+          setPreviousResult(true);
+        } else {
+          setWinStreak(0);
+          setPreviousResult(false);
+        }
+      }
+    }
+    setMachineRolls((prev) => {
+      const newPresses = [...prev];
+      newPresses[machineSelected] = tempMachinePress + rollAmts;
+      return newPresses;
+    });
     setMachineSeeds((prev) => {
       const newSeeds = [...prev];
       newSeeds[machineSelected] =
         dt +
         (machineSettings[machineSelected][0] * 100).toFixed(0) +
         machineSettings[machineSelected][1].toString() +
-        machinePressed;
+        (tempMachinePress + rollAmts);
       return newSeeds;
     });
-
-    setMachinePresses((prev) => {
-      const newPresses = [...prev];
-      newPresses[machineSelected] = machinePressed;
-      return newPresses;
+    console.log(tempResults);
+    //TODO MAKE SURE TO GET MACHINE RESULTS FIRST FROM SERVER TO PREVENT RACE CRASH AND MATCHING WITH DB
+    setResults((prev) => {
+      const newResults = [...prev];
+      newResults[machineSelected] = [
+        ...newResults[machineSelected],
+        ...tempResults,
+      ];
+      return newResults;
     });
 
-    if (machineSeeds[machineSelected]) {
-      const result = seedrandom(machineSeeds[machineSelected])();
-      setResults((prev) => {
-        const newResults = [...prev];
-        newResults[machineSelected] = [...newResults[machineSelected], result];
-        return newResults;
-      });
-      if (result < machineSettings[machineSelected][0]) {
-        setUserAmt((prev) => {
-          return prev + machineSettings[machineSelected][1] * betAmt;
-        });
-        setWinStreak((prev) => {
-          return prev + 1;
-        });
-        if (winStreak > longestWinStreak) {
-          setLongestWinStreak(winStreak);
-        }
-        setPreviousResult(true);
-      } else {
-        setWinStreak(0);
-        setPreviousResult(false);
-      }
-    }
-    //give bonus tokens
-    Object.keys(BONUS_TOKENS).map((base, idx) => {
+    //give bonus tokens only when using not switched
+    Object.keys(BONUS_TOKENS_AFTER_ROLLS).map((base, idx) => {
       const bonusBase = parseInt(base);
       if (
-        totalMachineBetAmts[machineSelected] + betAmt >= bonusBase &&
+        machineRolls[machineSelected] + rollAmts >= bonusBase &&
         !bonusClaimed[machineSelected][idx]
       ) {
         setUserAmt((prev) => {
-          return prev + BONUS_TOKENS[base];
+          return prev + BONUS_TOKENS_AFTER_ROLLS[base];
         });
         setBonusClaimed((prev) => {
           const newBonusClaimed = [...prev];
@@ -274,32 +268,40 @@ export default function Gamba() {
     });
   }
 
-  function increaseBetAmt(machineNumber: number) {
-    setMachineBetAmts((prev) => {
-      const newBets = [...prev];
-      const nextBet = newBets[machineNumber] + INCREMENT_BET;
-      if (nextBet > MAX_BET) {
-        newBets[machineNumber] = MAX_BET;
-      } else if (nextBet > userAmt && nextBet < userAmt) {
-        newBets[machineNumber] = userAmt;
+  function increaseRollAmt(machineNumber: number) {
+    //increase to next amount based on ALLOWED_ROLL_AMOUNTS until the limit of rolls possible
+    //return the highest possible roll amount if the user amount is less than the highest roll amount
+    const maxRollsAmt =
+      ALLOWED_ROLL_AMOUNTS[ALLOWED_ROLL_AMOUNTS.length - 1] > userAmt / BASE_BET
+        ? userAmt / BASE_BET
+        : ALLOWED_ROLL_AMOUNTS[ALLOWED_ROLL_AMOUNTS.length - 1];
+    console.log(maxRollsAmt);
+    setMachineRollAmts((prev) => {
+      const newRollAmts = [...prev];
+      const rollAmtIndex = ALLOWED_ROLL_AMOUNTS.indexOf(prev[machineNumber]);
+      //if index is not found, it must be the max roll amount
+      if (rollAmtIndex === -1) {
+        newRollAmts[machineNumber] = maxRollsAmt;
+      } else if (
+        rollAmtIndex + 1 < ALLOWED_ROLL_AMOUNTS.length &&
+        ALLOWED_ROLL_AMOUNTS[rollAmtIndex + 1] < maxRollsAmt
+      ) {
+        newRollAmts[machineNumber] = ALLOWED_ROLL_AMOUNTS[rollAmtIndex + 1];
       } else {
-        newBets[machineNumber] = nextBet;
+        newRollAmts[machineNumber] = maxRollsAmt;
       }
-      return newBets;
+      return newRollAmts;
     });
   }
 
-  function decreaseBetAmt(machineNumber: number) {
-    setMachineBetAmts((prev) => {
-      const newBets = [...prev];
-      const nextBet = newBets[machineNumber] - INCREMENT_BET;
-      if (nextBet < BASE_BET) {
-        newBets[machineNumber] = BASE_BET;
-      } else {
-        newBets[machineNumber] = newBets[machineNumber] - INCREMENT_BET;
-      }
-
-      return newBets;
+  function decreaseRollAmt(machineNumber: number) {
+    //decrease to next amount based on ALLOWED_ROLL_AMOUNTS
+    setMachineRollAmts((prev) => {
+      const newRollAmts = [...prev];
+      const rollAmtIndex = ALLOWED_ROLL_AMOUNTS.indexOf(prev[machineNumber]);
+      newRollAmts[machineNumber] =
+        ALLOWED_ROLL_AMOUNTS[rollAmtIndex - 1 < 0 ? 0 : rollAmtIndex - 1];
+      return newRollAmts;
     });
   }
 
@@ -310,14 +312,14 @@ export default function Gamba() {
   }, [userAmt]);
 
   useEffect(() => {
-    if (machineBetAmts.some((bet) => bet > userAmt)) {
-      setMachineBetAmts((prev) => {
+    if (machineRollAmts.some((bet) => bet > userAmt)) {
+      setMachineRollAmts((prev) => {
         return prev.map((bet) => {
           return bet > userAmt ? userAmt : bet;
         });
       });
     }
-  }, [machineBetAmts, userAmt]);
+  }, [machineRollAmts, userAmt]);
 
   return machineSettings.length && machineSeeds.length ? (
     <div className="flex flex-col gap-5 items-center justify-center">
@@ -338,21 +340,21 @@ export default function Gamba() {
                         <div className="flex justify-between w-full">
                           <Button
                             onClick={() => {
-                              decreaseBetAmt(index);
+                              decreaseRollAmt(index);
                             }}
                           >
                             -
                           </Button>
                           <Button
                             onClick={() => {
-                              playBet(index, machineBetAmts[index]);
+                              playRolls(index, machineRollAmts[index]);
                             }}
                           >
-                            BET {machineBetAmts[index]}
+                            ROLL {machineRollAmts[index]}
                           </Button>
                           <Button
                             onClick={() => {
-                              increaseBetAmt(index);
+                              increaseRollAmt(index);
                             }}
                           >
                             +
@@ -362,13 +364,8 @@ export default function Gamba() {
                           Machine {index}
                         </div>
 
-                        <div>Total Bet Amount:</div>
-                        <div className="font-arcade w-full text-center text-[32px]">
-                          {totalMachineBetAmts[index]}
-                        </div>
-
                         <div className="w-full flex flex-col items-center justify-center gap-1">
-                          <div className="font-arcade">BONUS</div>
+                          <div className="">ROLLS: BONUS TOKENS</div>
                           {bonusClaimed[index].map((claimed, idx) => {
                             return (
                               <div
@@ -381,9 +378,9 @@ export default function Gamba() {
                               >
                                 {claimed
                                   ? "Claimed"
-                                  : Object.entries(BONUS_TOKENS)[idx].join(
-                                      ": +"
-                                    )}
+                                  : Object.entries(BONUS_TOKENS_AFTER_ROLLS)[
+                                      idx
+                                    ].join(": +")}
                               </div>
                             );
                           })}
@@ -410,26 +407,25 @@ export default function Gamba() {
                             }
                           </div>
                         ) : null}
-
+                        <div className="flex flex-col gap-2 w-full items-center justify-center pb-4">
+                          <div>Number of Rolls: </div>
+                          <div className="font-arcade w-full text-center text-[32px]">
+                            {machineRolls[index]}
+                          </div>
+                        </div>
                         <div className="flex flex-col gap-2 w-full items-center justify-center">
                           <div>Your Win Rate:</div>
                           <div className="font-arcade w-full text-center text-[32px]">
-                            {machinePresses[index] !== 0
+                            {machineRolls[index] !== 0
                               ? (
                                   (results[index].filter(
                                     (result) =>
                                       result < machineSettings[index][0]
                                   ).length /
-                                    machinePresses[index]) *
+                                    machineRolls[index]) *
                                   100
                                 ).toFixed(2) + "%"
                               : 0}
-                          </div>
-                        </div>
-                        <div className="flex flex-col gap-2 w-full items-center justify-center pb-4">
-                          <div>Number of Bets: </div>
-                          <div className="font-arcade w-full text-center text-[32px]">
-                            {machinePresses[index]}
                           </div>
                         </div>
                       </div>
@@ -465,7 +461,7 @@ export default function Gamba() {
           {debug ? (
             <div>Yield Multiplier: {machineSettings[machineSelected][1]}</div>
           ) : null}
-          {debug ? <div>Press: {machinePresses[machineSelected]}</div> : null}
+          {debug ? <div>Press: {machineRolls[machineSelected]}</div> : null}
           {debug ? <div>Seed: {machineSeeds[machineSelected]}</div> : null}
           {debug ? (
             <Button
@@ -499,7 +495,7 @@ export default function Gamba() {
           ) : null}
           <div>
             Win?:
-            {results[machineSelected][machinePresses[machineSelected] - 1] <
+            {results[machineSelected][machineRolls[machineSelected] - 1] <
             machineSettings[machineSelected][0]
               ? "Yes"
               : "No"}
