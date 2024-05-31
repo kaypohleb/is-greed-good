@@ -11,9 +11,8 @@ export default function Window({
   icon?: StaticImageData;
   children: React.ReactNode;
 }) {
-  const nodeRef = useRef(null);
   return (
-    <div className="bg-paper text-black window flex flex-col">
+    <div className="bg-paper text-black window flex flex-col m-4">
       <div className="title-bar h-[30px] bg-silver flex justify-between items-center p-[2px] border-b-2 border-black">
         <div className="ml-2 flex gap-[2px] text-[16px] font-arcade no-select">
           <Image src={icon} alt="file_icon" height={15} />

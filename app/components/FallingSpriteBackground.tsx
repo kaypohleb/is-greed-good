@@ -28,19 +28,37 @@ export default function FallingSpriteBackground({
   displayYSize?: number;
   acceleration?: number;
 }) {
+  const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [active, setActive] = useState(false);
 
   useEffect(() => {
-    //fix devicePixelRatio for bluriness
+    //fix devicePixelRatio for bluriness whenever window is resized
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
-    const dpr = window.devicePixelRatio || 1;
-    canvas.width = window.innerWidth * dpr;
-    canvas.height = window.innerHeight * dpr;
-    ctx.scale(dpr, dpr);
+
+    const resize = () => {
+      const { width, height } =
+        containerRef.current?.getBoundingClientRect() || {
+          width: 0,
+          height: 0,
+        };
+      const dpr = window.devicePixelRatio || 1;
+      console.log(dpr, width, height);
+      canvas.width = width * dpr;
+      canvas.height = height * dpr;
+      canvas.style.width = width + "px";
+      canvas.style.height = height + "px";
+      ctx.scale(dpr, dpr);
+    };
+
+    resize();
+    window.addEventListener("resize", resize);
+    return () => {
+      window.removeEventListener("resize", resize);
+    };
   }, []);
 
   useEffect(() => {
@@ -105,16 +123,26 @@ export default function FallingSpriteBackground({
         }
       }
     };
-  }, [acceleration, active, displayXSize, displayYSize, numberOfSprites, spriteXSize, spriteYSize, startingYPos]);
+  }, [
+    acceleration,
+    active,
+    displayXSize,
+    displayYSize,
+    numberOfSprites,
+    spriteXSize,
+    spriteYSize,
+    startingYPos,
+  ]);
 
   return (
     <div
+      ref={containerRef}
       className="absolute w-full h-full top-0 left-0"
       style={{
         zIndex: zIndex,
       }}
     >
-      <canvas ref={canvasRef} className="w-full h-full" />
+      <canvas ref={canvasRef} />
     </div>
   );
 }

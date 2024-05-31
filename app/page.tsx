@@ -14,7 +14,7 @@ export default function Home() {
         acceleration={0.01}
         displayXSize={48}
         displayYSize={48}
-        startingYPos={-160}
+        startingYPos={0}
       />
       <Window title="">
         <div className="flex flex-col items-center justify-center coinbg gap-4 p-4">

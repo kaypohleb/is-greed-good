@@ -9,7 +9,7 @@ type CoinState = {
   state: number;
 };
 
-export default function CoinSplash() {
+export default function CelebrationModel() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [active, setActive] = useState(false);
 
@@ -107,6 +107,7 @@ export default function CoinSplash() {
       }}
     >
       <canvas ref={canvasRef} className="w-full h-full" />
+      <div>BIG WINDOW WITH WON AMOUNT</div>
     </div>
   );
 }
