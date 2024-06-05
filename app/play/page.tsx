@@ -1,22 +1,31 @@
 "use client";
-
+import "keen-slider/keen-slider.min.css";
 import Button from "@/components/Button";
-import EmblaCarousel from "@/components/EmblaCarousel";
+import { useKeenSlider } from "keen-slider/react";
+import Machine from "@/components/Machine";
+import { getRollsToWin } from "@/utils/bonus";
+
 import { genYieldMultiplier, genYieldProbabilities } from "@/utils/yields";
-import { EmblaOptionsType } from "embla-carousel";
 import { useSession } from "next-auth/react";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import seedrandom from "seedrandom";
+import { KeenSliderInstance } from "keen-slider";
+import CelebrationModel from "@/components/CelebrationModal";
 
-const OPTIONS: EmblaOptionsType = { loop: true };
-const BASE_BET = 100;
-const PHASES = ["GAME", "RESULTS"];
-const ALLOWED_ROLL_AMOUNTS = [1, 5, 10, 100];
-const BONUS_TOKENS_AFTER_ROLLS: { [key: string]: number } = {
-  10: 100,
-  50: 300,
-  200: 1000,
+const ALLOWED_BET_AMOUNTS = [1, 5, 10, 50, 100, 1000];
+
+const ResizePlugin = (slider: KeenSliderInstance) => {
+  const observer = new ResizeObserver(function () {
+    slider.update();
+  });
+
+  slider.on("created", () => {
+    observer.observe(slider.container);
+  });
+  slider.on("destroyed", () => {
+    observer.unobserve(slider.container);
+  });
 };
 
 export default function Gamba() {
@@ -56,29 +65,13 @@ export default function Gamba() {
       [...Array(machineNumber)]
         .map(() => {
           const multiplier = genYieldMultiplier(rand);
-          let probability = genYieldProbabilities(rand);
-          switch (multiplier) {
-            case 2:
-              probability *= 0.45;
-              break;
-            case 4:
-              probability *= 0.225;
-              break;
-            case 5:
-              probability *= 0.18;
-              break;
-            case 10:
-              probability *= 0.009;
-              break;
-            case 50:
-              probability *= 0.018;
-              break;
-          }
+          const probability = genYieldProbabilities(rand, multiplier);
           return [probability, multiplier];
         })
         .sort(() => randPos() - 0.5),
     [rand, randPos]
   );
+
   const [machineSeeds, setMachineSeeds] = useState<string[]>(() => {
     return [...Array(machineNumber)].map((_, index) => {
       return (
@@ -90,21 +83,55 @@ export default function Gamba() {
     });
   });
 
+  const [modal, setModal] = useState<JSX.Element | null>(null);
+
   const [results, setResults] = useState<number[][]>(
     [...Array(machineNumber)].map(() => {
       return [];
     })
   );
 
+  const [sliderRef, instanceRef] = useKeenSlider(
+    {
+      loop: false,
+      slides: {
+        perView: 1,
+        spacing: 15,
+        origin: "center",
+      },
+      breakpoints: {
+        "(min-width: 768px)": {
+          slides: {
+            perView: 3,
+            spacing: 15,
+            origin: "center",
+          },
+        },
+        "(min-width: 1280px)": {
+          slides: {
+            perView: 5,
+            spacing: 15,
+            origin: "center",
+          },
+        },
+      },
+      slideChanged() {
+        console.log("slide changed");
+      },
+    },
+    [ResizePlugin]
+  );
+
   //if user is logged in, get user amount from server
-  const [userAmt, setUserAmt] = useState<number>(10000);
+  const [userAmt, setUserAmt] = useState<number>(1000);
+  const [userWinAmt, setUserWinAmt] = useState<number>(0);
   //phase 0: game phase
   //phase 1: end phase
   const [userPhase, setUserPhase] = useState<number>(0);
 
-  const [machineRollAmts, setMachineRollAmts] = useState<number[]>(
+  const [machineBetAmts, setMachineBetAmts] = useState<number[]>(
     [...Array(machineNumber)].map(() => {
-      return ALLOWED_ROLL_AMOUNTS[0];
+      return ALLOWED_BET_AMOUNTS[0];
     })
   );
 
@@ -116,64 +143,76 @@ export default function Gamba() {
     })
   );
 
-  const [bonusClaimed, setBonusClaimed] = useState<boolean[][]>(
-    [...Array(machineNumber)].map((_, index) => {
-      return Object.keys(BONUS_TOKENS_AFTER_ROLLS).map((base, idx) => {
-        return machineRollAmts[index] >= parseInt(base);
-      });
+  //if winning streak, increase base bet amount
+  const [previousResult, setPreviousResult] = useState<boolean[]>(
+    [...Array(machineNumber)].map(() => {
+      return false;
     })
   );
-
-  //if winning streak, increase base bet amount
-  const [previousResult, setPreviousResult] = useState<boolean>(false);
-  const [winStreak, setWinStreak] = useState<number>(0);
-  const [longestWinStreak, setLongestWinStreak] = useState<number>(0);
-  //grant bonus tokens if amount of bet tokens on it 3 tiers 100, 250, 500
+  const [loyaltyStreaks, setLoyaltyStreaks] = useState<number[]>(
+    [...Array(machineNumber)].map(() => {
+      return 0;
+    })
+  );
+  const [winStreak, setWinStreak] = useState<number[]>(
+    [...Array(machineNumber)].map(() => {
+      return 0;
+    })
+  );
+  const [longestWinStreak, setLongestWinStreak] = useState<number[]>(
+    [...Array(machineNumber)].map(() => {
+      return 0;
+    })
+  );
   const [machineSelected, setMachineSelected] = useState<number>(0);
-  const [lastestRollsResults, setLatestRollsResults] = useState<boolean[]>([]);
 
   //for debugging purposes
-  function play1(machineSelected: number) {
+  function play1(machineSel: number) {
     if (userPhase > 0) return;
     setUserAmt((prev) => {
       return prev - 1;
     });
-    //TODO make sure to get machine press as a request FIRST FROM SERVER TO PREVENT MULTI PRESS AND MULTI-TAB SIGN-IN
-    const machinePressed = machineRolls[machineSelected] + 1;
+    const machinePressed = machineRolls[machineSel] + 1;
     setMachineSeeds((prev) => {
       const newSeeds = [...prev];
-      newSeeds[machineSelected] =
+      newSeeds[machineSel] =
         dt +
-        (machineSettings[machineSelected][0] * 100).toFixed(0) +
-        machineSettings[machineSelected][1].toString() +
+        (machineSettings[machineSel][0] * 100).toFixed(0) +
+        machineSettings[machineSel][1].toString() +
         machinePressed;
       return newSeeds;
     });
 
     setMachineRolls((prev) => {
       const newPresses = [...prev];
-      newPresses[machineSelected] = machinePressed;
+      newPresses[machineSel] = machinePressed;
       return newPresses;
     });
 
-    if (machineSeeds[machineSelected]) {
-      const result = seedrandom(machineSeeds[machineSelected])();
+    if (machineSeeds[machineSel]) {
+      const result = seedrandom(machineSeeds[machineSel])();
       setResults((prev) => {
         const newResults = [...prev];
-        newResults[machineSelected] = [...newResults[machineSelected], result];
+        newResults[machineSel] = [...newResults[machineSel], result];
         return newResults;
       });
-      if (result < machineSettings[machineSelected][0]) {
-        setUserAmt((prev) => {
+      if (result < machineSettings[machineSel][0]) {
+        setUserWinAmt((prev) => {
           return prev + machineSettings[machineSelected][1];
         });
       }
     }
   }
 
+  const getWins = (machineNum: number) => {
+    return results[machineNum].filter(
+      (result) => result < machineSettings[machineNum][0]
+    ).length;
+  };
+
   //for debugging purposes
-  function play100(machineSelected: number) {
-    const tempMachinePress = machineRolls[machineSelected];
+  function play100(machineSel: number) {
+    const tempMachinePress = machineRolls[machineSel];
     const tempResults: number[] = [];
     for (let i = 0; i < 100; i++) {
       setUserAmt((prev) => {
@@ -182,152 +221,163 @@ export default function Gamba() {
       const machinePressed = tempMachinePress + i;
       const machineSeed =
         dt +
-        (machineSettings[machineSelected][0] * 100).toFixed(0) +
-        machineSettings[machineSelected][1].toString() +
+        (machineSettings[machineSel][0] * 100).toFixed(0) +
+        machineSettings[machineSel][1].toString() +
         machinePressed;
 
-      if (machineSeeds[machineSelected]) {
+      if (machineSeeds[machineSel]) {
         const result = seedrandom(machineSeed)();
         tempResults.push(result);
       }
     }
     setMachineRolls((prev) => {
       const newPresses = [...prev];
-      newPresses[machineSelected] = tempMachinePress + 100;
+      newPresses[machineSel] = tempMachinePress + 100;
       return newPresses;
     });
     setMachineSeeds((prev) => {
       const newSeeds = [...prev];
-      newSeeds[machineSelected] =
+      newSeeds[machineSel] =
         dt +
-        (machineSettings[machineSelected][0] * 100).toFixed(0) +
-        machineSettings[machineSelected][1].toString() +
+        (machineSettings[machineSel][0] * 100).toFixed(0) +
+        machineSettings[machineSel][1].toString() +
         (tempMachinePress + 100);
       return newSeeds;
     });
     setResults((prev) => {
       const newResults = [...prev];
-      newResults[machineSelected] = [
-        ...newResults[machineSelected],
-        ...tempResults,
-      ];
+      newResults[machineSel] = [...newResults[machineSel], ...tempResults];
       return newResults;
     });
   }
 
-  function playRolls(machineSelected: number, rollAmts: number) {
-    const tempMachinePress = machineRolls[machineSelected];
-    const tempResults: number[] = [];
-    if (userPhase > 1 && userAmt < rollAmts * BASE_BET && userAmt > 0) return;
+  function playBets(machineSel: number, betAmts: number): number | undefined {
+    if (userPhase > 1 && userAmt < betAmts && userAmt > 0) return;
     //GET MACHINE PRESSES FIRST FROM SERVER TO PREVENT MULTI PRESS AND MULTI-TAB SIGN-IN
-    for (let i = 0; i < rollAmts; i++) {
-      setUserAmt((prev) => {
-        return prev - BASE_BET;
-      });
-      const machinePressed = tempMachinePress + i;
-      const machineSeed =
-        dt +
-        (machineSettings[machineSelected][0] * 100).toFixed(0) +
-        machineSettings[machineSelected][1].toString() +
-        machinePressed;
+    setUserAmt((prev) => {
+      return prev - betAmts;
+    });
 
-      if (machineSeeds[machineSelected]) {
-        const result = seedrandom(machineSeed)();
-        tempResults.push(result);
-        if (result < machineSettings[machineSelected][0]) {
-          setUserAmt((prev) => {
-            return prev + machineSettings[machineSelected][1] * BASE_BET;
-          });
-          setWinStreak((prev) => {
-            return prev + 1;
-          });
-          if (winStreak > longestWinStreak) {
-            setLongestWinStreak(winStreak);
-          }
-          setPreviousResult(true);
-        } else {
-          setWinStreak(0);
-          setPreviousResult(false);
-        }
-      }
-    }
+    const machineSeed =
+      dt +
+      (machineSettings[machineSel][0] * 100).toFixed(0) +
+      machineSettings[machineSel][1].toString() +
+      machineRolls[machineSel] +
+      1;
+
+    const result = seedrandom(machineSeed)();
+
+    //TODO MAKE SURE TO GET MACHINE RESULTS FIRST FROM SERVER TO PREVENT RACE CRASH AND MATCHING WITH DB
+
+    return result;
+  }
+
+  function appendResult(machineSel: number, result: number, betAmts: number) {
+    let tempWins = getWins(machineSel);
+
     setMachineRolls((prev) => {
       const newPresses = [...prev];
-      newPresses[machineSelected] = tempMachinePress + rollAmts;
+      newPresses[machineSel] = machineRolls[machineSel] + 1;
       return newPresses;
     });
-    setMachineSeeds((prev) => {
-      const newSeeds = [...prev];
-      newSeeds[machineSelected] =
-        dt +
-        (machineSettings[machineSelected][0] * 100).toFixed(0) +
-        machineSettings[machineSelected][1].toString() +
-        (tempMachinePress + rollAmts);
-      return newSeeds;
+
+    setLoyaltyStreaks((prev) => {
+      const newLoyaltyStreaks = new Array(machineNumber).fill(0);
+      newLoyaltyStreaks[machineSel] = prev[machineSel] + 1;
+      return newLoyaltyStreaks;
     });
-    console.log(tempResults);
-    //TODO MAKE SURE TO GET MACHINE RESULTS FIRST FROM SERVER TO PREVENT RACE CRASH AND MATCHING WITH DB
+
     setResults((prev) => {
       const newResults = [...prev];
-      newResults[machineSelected] = [
-        ...newResults[machineSelected],
-        ...tempResults,
-      ];
+      newResults[machineSel] = [...newResults[machineSel], result];
       return newResults;
     });
-
-    //give bonus tokens only when using not switched
-    Object.keys(BONUS_TOKENS_AFTER_ROLLS).map((base, idx) => {
-      const bonusBase = parseInt(base);
-      if (
-        machineRolls[machineSelected] + rollAmts >= bonusBase &&
-        !bonusClaimed[machineSelected][idx]
-      ) {
+    if (result < machineSettings[machineSel][0]) {
+      setUserAmt((prev) => {
+        return prev + machineSettings[machineSel][1] * betAmts;
+      });
+      const nextWinsBonus = getRollsToWin(
+        machineSettings[machineSelected][1],
+        machineSettings[machineSelected][0],
+        tempWins
+      );
+      //   tempWins + 1,
+      //   machineSettings[machineSelected][1],
+      //   nextWinsBonus,
+      //   tempWins + 1 >= nextWinsBonus.nextWins
+      // );
+      if (tempWins + 1 == nextWinsBonus.nextWins) {
         setUserAmt((prev) => {
-          return prev + BONUS_TOKENS_AFTER_ROLLS[base];
-        });
-        setBonusClaimed((prev) => {
-          const newBonusClaimed = [...prev];
-          newBonusClaimed[machineSelected][idx] = true;
-          return newBonusClaimed;
+          return prev + nextWinsBonus.bonus;
         });
       }
-    });
+      tempWins += 1;
+      if (previousResult) {
+        setWinStreak((prev) => {
+          const newWinStreak = [...prev];
+          newWinStreak[machineSel] = newWinStreak[machineSel] + 1;
+          return newWinStreak;
+        });
+      }
+      if (winStreak > longestWinStreak) {
+        setLongestWinStreak(winStreak);
+      }
+      setPreviousResult((prev) => {
+        const newPreviousResult = [...prev];
+        newPreviousResult[machineSel] = true;
+        return newPreviousResult;
+      });
+      //add CelebrationModal for 5 seconds
+      setModal(<CelebrationModel coinAmt={machineSettings[machineSel][1]} />);
+      setTimeout(() => {
+        setModal(null);
+      }, 5000);
+    } else {
+      setWinStreak((prev) => {
+        const newWinStreak = [...prev];
+        newWinStreak[machineSel] = 0;
+        return newWinStreak;
+      });
+      setPreviousResult((prev) => {
+        const newPreviousResult = [...prev];
+        newPreviousResult[machineSel] = false;
+        return newPreviousResult;
+      });
+    }
   }
 
-  function increaseRollAmt(machineNumber: number) {
+  function increaseBetAmt(machineNumber: number) {
     //increase to next amount based on ALLOWED_ROLL_AMOUNTS until the limit of rolls possible
     //return the highest possible roll amount if the user amount is less than the highest roll amount
     const maxRollsAmt =
-      ALLOWED_ROLL_AMOUNTS[ALLOWED_ROLL_AMOUNTS.length - 1] > userAmt / BASE_BET
-        ? userAmt / BASE_BET
-        : ALLOWED_ROLL_AMOUNTS[ALLOWED_ROLL_AMOUNTS.length - 1];
-    console.log(maxRollsAmt);
-    setMachineRollAmts((prev) => {
-      const newRollAmts = [...prev];
-      const rollAmtIndex = ALLOWED_ROLL_AMOUNTS.indexOf(prev[machineNumber]);
+      ALLOWED_BET_AMOUNTS[ALLOWED_BET_AMOUNTS.length - 1] > userAmt
+        ? userAmt
+        : ALLOWED_BET_AMOUNTS[ALLOWED_BET_AMOUNTS.length - 1];
+    setMachineBetAmts((prev) => {
+      const newBetAmts = [...prev];
+      const rollAmtIndex = ALLOWED_BET_AMOUNTS.indexOf(prev[machineNumber]);
       //if index is not found, it must be the max roll amount
       if (rollAmtIndex === -1) {
-        newRollAmts[machineNumber] = maxRollsAmt;
+        newBetAmts[machineNumber] = maxRollsAmt;
       } else if (
-        rollAmtIndex + 1 < ALLOWED_ROLL_AMOUNTS.length &&
-        ALLOWED_ROLL_AMOUNTS[rollAmtIndex + 1] < maxRollsAmt
+        rollAmtIndex + 1 < ALLOWED_BET_AMOUNTS.length &&
+        ALLOWED_BET_AMOUNTS[rollAmtIndex + 1] < maxRollsAmt
       ) {
-        newRollAmts[machineNumber] = ALLOWED_ROLL_AMOUNTS[rollAmtIndex + 1];
+        newBetAmts[machineNumber] = ALLOWED_BET_AMOUNTS[rollAmtIndex + 1];
       } else {
-        newRollAmts[machineNumber] = maxRollsAmt;
+        newBetAmts[machineNumber] = maxRollsAmt;
       }
-      return newRollAmts;
+      return newBetAmts;
     });
   }
 
-  function decreaseRollAmt(machineNumber: number) {
+  function decreaseBetAmt(machineNumber: number) {
     //decrease to next amount based on ALLOWED_ROLL_AMOUNTS
-    setMachineRollAmts((prev) => {
+    setMachineBetAmts((prev) => {
       const newRollAmts = [...prev];
-      const rollAmtIndex = ALLOWED_ROLL_AMOUNTS.indexOf(prev[machineNumber]);
+      const rollAmtIndex = ALLOWED_BET_AMOUNTS.indexOf(prev[machineNumber]);
       newRollAmts[machineNumber] =
-        ALLOWED_ROLL_AMOUNTS[rollAmtIndex - 1 < 0 ? 0 : rollAmtIndex - 1];
+        ALLOWED_BET_AMOUNTS[rollAmtIndex - 1 < 0 ? 0 : rollAmtIndex - 1];
       return newRollAmts;
     });
   }
@@ -337,6 +387,18 @@ export default function Gamba() {
       setUserPhase(1);
     }
   }, [userAmt]);
+
+  useEffect(() => {
+    for (let i = 0; i < machineNumber; i++) {
+      if (machineBetAmts[i] > userAmt) {
+        setMachineBetAmts((prev) => {
+          const newRollAmts = [...prev];
+          newRollAmts[i] = userAmt;
+          return newRollAmts;
+        });
+      }
+    }
+  }, [machineBetAmts, userAmt]);
 
   useEffect(() => {
     results.map((result, index) => {
@@ -353,116 +415,52 @@ export default function Gamba() {
 
   return machineSettings.length && machineSeeds.length ? (
     <div className="flex flex-col gap-5 items-center justify-center">
+      {modal}
       {debug ? <div>User: {userId}</div> : null}
-      <div className="font-arcade text-[32px] mt-4 flex flex-wrap justify-center gap-2">
-        <div>TOKENS:</div>
-        <div>{userAmt}</div>
+      <div className="flex flex-wrap gap-4">
+        <div className="font-arcade text-[32px] mt-4 flex flex-wrap justify-center gap-2">
+          <div>TOKENS:</div>
+          <div>{userAmt}</div>
+        </div>
+        <div className="font-arcade text-[32px] mt-4 flex flex-wrap justify-center gap-2">
+          <div>WIN TOKENS:</div>
+          <div>{userWinAmt}</div>
+        </div>
       </div>
+
       {userPhase < 1 ? (
         <div className="w-full mt-4">
-          <EmblaCarousel options={OPTIONS}>
-            <div className="embla__container flex items-center justify-center">
-              {machineSeeds.map((seed, index) => {
-                return (
-                  <div key={index} className="embla__slide">
-                    <div className="vintage-box mb-2">
-                      <div className="vintage-box-inner flex flex-col gap-2 items-center p-4 font-ms">
-                        <div className="flex justify-between w-full">
-                          <Button
-                            onClick={() => {
-                              decreaseRollAmt(index);
-                            }}
-                          >
-                            -
-                          </Button>
-                          <Button
-                            onClick={() => {
-                              playRolls(index, machineRollAmts[index]);
-                            }}
-                          >
-                            ROLL {machineRollAmts[index]}
-                          </Button>
-                          <Button
-                            onClick={() => {
-                              increaseRollAmt(index);
-                            }}
-                          >
-                            +
-                          </Button>
-                        </div>
-                        <div className="font-arcade text-black text-[20px]">
-                          Machine {index}
-                        </div>
-
-                        <div className="w-full flex flex-col items-center justify-center gap-1">
-                          <div className="">ROLLS: BONUS TOKENS</div>
-                          {bonusClaimed[index].map((claimed, idx) => {
-                            return (
-                              <div
-                                key={idx}
-                                className="w-full text-center p-2 uppercase border-2 border-black"
-                                style={{
-                                  backgroundColor: claimed ? "black" : "white",
-                                  color: claimed ? "white" : "black",
-                                }}
-                              >
-                                {claimed
-                                  ? "Claimed"
-                                  : Object.entries(BONUS_TOKENS_AFTER_ROLLS)[
-                                      idx
-                                    ].join(": +")}
-                              </div>
-                            );
-                          })}
-                        </div>
-                        {debug ? (
-                          <div>
-                            Yield Probability:{" "}
-                            {(machineSettings[index][0] * 100).toFixed(2)}
-                          </div>
-                        ) : null}
-                        {debug || machineMultKnown[index] ? (
-                          <div>Multiplier: {machineSettings[index][1]}</div>
-                        ) : null}
-                        {debug ? <div>Seed: {seed}</div> : null}
-                        {debug ? (
-                          <div>
-                            Wins:{" "}
-                            {
-                              results[index].filter(
-                                (result) => result < machineSettings[index][0]
-                              ).length
-                            }
-                          </div>
-                        ) : null}
-                        <div className="flex flex-col gap-2 w-full items-center justify-center pb-4">
-                          <div>Number of Rolls: </div>
-                          <div className="font-arcade w-full text-center text-[32px]">
-                            {machineRolls[index]}
-                          </div>
-                        </div>
-                        <div className="flex flex-col gap-2 w-full items-center justify-center">
-                          <div>Your Win Rate:</div>
-                          <div className="font-arcade w-full text-center text-[32px]">
-                            {machineRolls[index] !== 0
-                              ? (
-                                  (results[index].filter(
-                                    (result) =>
-                                      result < machineSettings[index][0]
-                                  ).length /
-                                    machineRolls[index]) *
-                                  100
-                                ).toFixed(2) + "%"
-                              : 0}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </EmblaCarousel>
+          <div ref={sliderRef} className="keen-slider">
+            {machineSeeds.map((seed, index) => {
+              return (
+                <div
+                  key={index}
+                  className="keen-slider__slide"
+                  style={{
+                    opacity: machineSelected === index ? 1 : 0.6,
+                  }}
+                >
+                  <Machine
+                    machineNum={index}
+                    machineSettings={machineSettings[index]}
+                    machineRolls={machineRolls[index]}
+                    results={results[index]}
+                    getWins={getWins}
+                    playBets={playBets}
+                    increaseBetAmt={increaseBetAmt}
+                    decreaseBetAmt={decreaseBetAmt}
+                    setMachineSelected={setMachineSelected}
+                    machineBetAmt={machineBetAmts[index]}
+                    machineMultKnown={machineMultKnown[index]}
+                    loyaltyStreaks={loyaltyStreaks[index]}
+                    debug={debug}
+                    seed={seed}
+                    appendResult={appendResult}
+                  />
+                </div>
+              );
+            })}
+          </div>
         </div>
       ) : null}
       {userPhase == 0 ? (

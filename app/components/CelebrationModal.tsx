@@ -9,9 +9,10 @@ type CoinState = {
   state: number;
 };
 
-export default function CelebrationModel() {
+export default function CelebrationModel({ coinAmt }: { coinAmt: number }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [active, setActive] = useState(false);
+  const resultQueue = useRef<CoinState[]>([]);
 
   useEffect(() => {
     if (active) {
@@ -100,14 +101,23 @@ export default function CelebrationModel() {
   }, [active]);
 
   return (
-    <div
-      className="absolute w-full h-full top-0 left-0"
-      style={{
-        zIndex: -1,
-      }}
-    >
-      <canvas ref={canvasRef} className="w-full h-full" />
-      <div>BIG WINDOW WITH WON AMOUNT</div>
-    </div>
+    <>
+      <div
+        className="absolute w-full h-full top-0 left-0"
+        style={{
+          zIndex: -1,
+        }}
+      >
+        <canvas ref={canvasRef} className="w-full h-full" />
+      </div>
+      {/* <div
+        className="absolute w-full h-full top-0 left-0 text-[60px]"
+        style={{
+          zIndex: 999,
+        }}
+      >
+        {coinAmt}
+      </div> */}
+    </>
   );
 }
