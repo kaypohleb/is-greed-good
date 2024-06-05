@@ -85,15 +85,13 @@ export default function Machine({
   function roll(
     door: HTMLDivElement,
     offset = 0,
-    target: number | null = null
+    target: number
   ): Promise<number> {
-    let delta = (offset + 2) * numIcons + Math.floor(Math.random() * numIcons);
     const style = getComputedStyle(door);
     const backgroundPositionY = parseInt(style.backgroundPositionY);
-    if (target) {
-      const currentIndex = backgroundPositionY / icon_height;
-      delta = target - currentIndex + (offset + 2) * numIcons;
-    }
+    const currentIndex = backgroundPositionY / icon_height;
+    const delta = target - currentIndex + (offset + 2) * numIcons;
+    console.log("current", currentIndex, target, offset, delta);
     return new Promise((resolve, reject) => {
       // Target background position
       const targetBackgroundPositionY =
