@@ -12,6 +12,7 @@ export default async function SignInButton() {
           action={async () => {
             "use server";
             await signOut({ redirectTo: "/" });
+            
           }}
         >
           <button
@@ -28,7 +29,7 @@ export default async function SignInButton() {
     <form
       action={async () => {
         "use server";
-        await signIn("google")
+        await signIn("google");
       }}
     >
       <button

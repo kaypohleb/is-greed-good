@@ -9,7 +9,7 @@ type CoinState = {
   state: number;
 };
 
-export default function CelebrationModel({ coinAmt }: { coinAmt: number }) {
+const CelebrationModal = ({ coinAmt }: { coinAmt: number }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [active, setActive] = useState(false);
   const resultQueue = useRef<CoinState[]>([]);
@@ -35,6 +35,15 @@ export default function CelebrationModel({ coinAmt }: { coinAmt: number }) {
   }, []);
 
   useEffect(() => {
+    const canvas = canvasRef.current;
+    //draw number on canvas
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    ctx.font = "48px Arial";
+    ctx.textAlign = "center";
+    ctx.fillStyle = "white";
+    ctx.fillText(`+${coinAmt} coins`, canvas.width / 2, canvas.height / 2);
     const coin = new Image();
     const coins: CoinState[] = [];
     coin.src = "/tick-coin-sprite.png";
@@ -101,23 +110,17 @@ export default function CelebrationModel({ coinAmt }: { coinAmt: number }) {
   }, [active]);
 
   return (
-    <>
-      <div
-        className="absolute w-full h-full top-0 left-0"
-        style={{
-          zIndex: -1,
-        }}
-      >
-        <canvas ref={canvasRef} className="w-full h-full" />
+    <div className="absolute w-full h-full top-0 left-0 z-[999]">
+      <div className="relative w-full h-full">
+        <div className="bg-black w-full h-full opacity-30"></div>
+        <canvas
+          ref={canvasRef}
+          className="absolute w-full h-full top-0 left-0 z-[1000]"
+        />
       </div>
-      {/* <div
-        className="absolute w-full h-full top-0 left-0 text-[60px]"
-        style={{
-          zIndex: 999,
-        }}
-      >
-        {coinAmt}
-      </div> */}
-    </>
+    </div>
   );
 }
+
+CelebrationModal.displayName = "CelebrationModal";
+export default CelebrationModal;

@@ -9,7 +9,7 @@ type CoinState = {
   state: number;
 };
 
-export default function FallingSpriteBackground({
+const FallingSpriteBackground = ({
   spriteXSize,
   spriteYSize,
   numberOfSprites,
@@ -27,7 +27,7 @@ export default function FallingSpriteBackground({
   displayXSize?: number;
   displayYSize?: number;
   acceleration?: number;
-}) {
+}) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [active, setActive] = useState(false);
@@ -46,7 +46,7 @@ export default function FallingSpriteBackground({
           height: 0,
         };
       const dpr = window.devicePixelRatio || 1;
-      console.log(dpr, width, height);
+      //console.log(dpr, width, height);
       canvas.width = width * dpr;
       canvas.height = height * dpr;
       canvas.style.width = width + "px";
@@ -145,4 +145,7 @@ export default function FallingSpriteBackground({
       <canvas ref={canvasRef} />
     </div>
   );
-}
+};
+
+FallingSpriteBackground.displayName = "FallingSpriteBackground";
+export default FallingSpriteBackground;

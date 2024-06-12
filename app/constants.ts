@@ -1,0 +1,4 @@
+export const MACHINE_NUMBER = 5;
+export const LOYALTY_MINIMUM_BET_MULTIPLIER = 1;
+export const LOYALTY_PAYOUT_MULITPLIER = 1;
+export const ALLOWED_BET_AMOUNTS = [1, 5, 10, 50, 100, 1000];

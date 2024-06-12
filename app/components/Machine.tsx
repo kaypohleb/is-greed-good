@@ -1,46 +1,42 @@
 "use client";
 import Button from "@/components/Button";
+import { BetResult } from "@/types";
 import { getRollsToWin } from "@/utils/bonus";
 import { WIN_COMBINATIONS, LOSS_COMBINATIONS } from "@/utils/yields";
-import { set } from "animejs";
-import { useRef, useState } from "react";
+import { use, useRef, useState } from "react";
+import { usePlayStateContext } from "@/providers/PlayStateProvider";
+import { ALLOWED_BET_AMOUNTS } from "@/constants";
+import getWins from "@/utils/getWins";
 
-export default function Machine({
+const Machine = ({
   machineNum,
   machineSettings,
   machineBetAmt,
   machineRolls,
-  machineMultKnown,
   results,
   loyaltyStreaks,
   seed,
   debug,
-  decreaseBetAmt,
-  increaseBetAmt,
-  setMachineSelected,
   playBets,
   appendResult,
-  getWins,
 }: {
   machineNum: number;
   machineSettings: number[];
   machineBetAmt: number;
   machineRolls: number;
-  machineMultKnown: boolean;
-  results: number[];
+  results: BetResult[];
   loyaltyStreaks: number;
   seed: string;
   debug: string | boolean;
-  decreaseBetAmt: (index: number) => void;
-  increaseBetAmt: (index: number) => void;
-  setMachineSelected: (index: number) => void;
   playBets: (index: number, betAmt: number) => number | undefined;
   appendResult: (machineSel: number, result: number, betAmts: number) => void;
-  getWins: (index: number) => number;
-}) {
+}) => {
+  const { playState, forceUpdate, forcedGet, updatePlayState } =
+    usePlayStateContext();
+
   const numIcons = 10;
-  const icon_height = 48;
-  const time_per_icon = 100;
+  const iconHeight = 96;
+  const timePerIcon = 50;
   const reel1Ref = useRef<HTMLDivElement>(null);
   const reel2Ref = useRef<HTMLDivElement>(null);
   const reel3Ref = useRef<HTMLDivElement>(null);
@@ -89,16 +85,16 @@ export default function Machine({
   ): Promise<number> {
     const style = getComputedStyle(door);
     const backgroundPositionY = parseInt(style.backgroundPositionY);
-    const currentIndex = backgroundPositionY / icon_height;
+    const currentIndex = backgroundPositionY / iconHeight;
     const delta = target - currentIndex + (offset + 2) * numIcons;
     console.log("current", currentIndex, target, offset, delta);
     return new Promise((resolve, reject) => {
       // Target background position
       const targetBackgroundPositionY =
-        backgroundPositionY + delta * icon_height;
+        backgroundPositionY + delta * iconHeight;
       // Normalized background position, for reset
       const normTargetBackgroundPositionY =
-        targetBackgroundPositionY % (numIcons * icon_height);
+        targetBackgroundPositionY % (numIcons * iconHeight);
       console.log(
         "target",
         target,
@@ -111,13 +107,13 @@ export default function Machine({
         // Set transition properties ==> https://cubic-bezier.com/#.41,-0.01,.63,1.09
 
         door.style.transition = `background-position-y ${
-          (9 + 1 * delta) * time_per_icon
+          (9 + 1 * delta) * timePerIcon
         }ms cubic-bezier(.41,-0.01,.63,1.09)`;
         // Set background position
         door.style.backgroundPositionY = `${
-          backgroundPositionY + delta * icon_height
+          backgroundPositionY + delta * iconHeight
         }px`;
-      }, offset * 150);
+      }, offset * 75);
 
       // After animation
       setTimeout(() => {
@@ -126,7 +122,7 @@ export default function Machine({
         door.style.backgroundPositionY = `${normTargetBackgroundPositionY}px`;
         // Resolve this promise
         resolve(delta % numIcons);
-      }, (9 + 1 * delta) * time_per_icon + offset * 150);
+      }, (9 + 1 * delta) * timePerIcon + offset * 75);
     });
   }
 
@@ -135,10 +131,10 @@ export default function Machine({
     let targets = null;
     if (result < machineSettings[0]) {
       targets = getRandomWinTargets();
-      console.log("win", targets);
+      //console.log("win", targets);
     } else {
       targets = getRandomLossTargets();
-      console.log("loss", targets);
+      //console.log("loss", targets);
     }
 
     const reelsList = [reel1Ref, reel2Ref, reel3Ref];
@@ -168,10 +164,52 @@ export default function Machine({
       });
   }
 
+  function increaseBetAmt(machineNumber: number) {
+    //increase to next amount based on ALLOWED_ROLL_AMOUNTS until the limit of rolls possible
+    //return the highest possible roll amount if the user amount is less than the highest roll amount
+    const updatedPlayState = { ...playState };
+    const maxRollsAmt =
+      ALLOWED_BET_AMOUNTS[ALLOWED_BET_AMOUNTS.length - 1] > playState.userAmt
+        ? playState.userAmt
+        : ALLOWED_BET_AMOUNTS[ALLOWED_BET_AMOUNTS.length - 1];
+
+    const rollAmtIndex = ALLOWED_BET_AMOUNTS.indexOf(
+      playState.betAmts[machineNumber]
+    );
+    //if index is not found, it must be the max roll amount
+    if (rollAmtIndex === -1) {
+      updatedPlayState.betAmts[machineNumber] = maxRollsAmt;
+    } else if (
+      rollAmtIndex + 1 < ALLOWED_BET_AMOUNTS.length &&
+      ALLOWED_BET_AMOUNTS[rollAmtIndex + 1] < maxRollsAmt
+    ) {
+      updatedPlayState.betAmts[machineNumber] =
+        ALLOWED_BET_AMOUNTS[rollAmtIndex + 1];
+    } else {
+      updatedPlayState.betAmts[machineNumber] = maxRollsAmt;
+    }
+    forceUpdate(updatedPlayState);
+  }
+
+  function decreaseBetAmt(machineNumber: number) {
+    //decrease to next amount based on ALLOWED_ROLL_AMOUNTS
+    const updatedPlayState = { ...playState };
+    const rollAmtIndex = ALLOWED_BET_AMOUNTS.indexOf(
+      playState.betAmts[machineNumber]
+    );
+    if (rollAmtIndex > 0) {
+      updatedPlayState.betAmts[machineNumber] =
+        ALLOWED_BET_AMOUNTS[rollAmtIndex - 1];
+    } else {
+      updatedPlayState.betAmts[machineNumber] = ALLOWED_BET_AMOUNTS[0];
+    }
+    forceUpdate(updatedPlayState);
+  }
+
   return (
     <div className="vintage-box mb-2">
       <div className="vintage-box-inner flex flex-col gap-2 items-center p-4 font-ms">
-        <div className="relative flex w-[144px] border-2 border-black">
+        <div className="relative flex w-[288px] bg-white border-2 border-black">
           <div ref={reel1Ref} className="reel"></div>
           <div ref={reel2Ref} className="reel"></div>
           <div ref={reel3Ref} className="reel"></div>
@@ -187,7 +225,6 @@ export default function Machine({
           <Button
             onClick={() => {
               if (rolling) return;
-              setMachineSelected(machineNum);
               const result = playBets(machineNum, machineBetAmt);
               if (typeof result === "number") {
                 rollAll(result);
@@ -214,14 +251,14 @@ export default function Machine({
             {getRollsToWin(
               machineSettings[1],
               machineSettings[0],
-              getWins(machineNum)
-            ).nextWins - getWins(machineNum)}
+              getWins(results, machineSettings[0])
+            ).nextWins - getWins(results, machineSettings[0])}
             : +
             {
               getRollsToWin(
                 machineSettings[1],
                 machineSettings[0],
-                getWins(machineNum)
+                getWins(results, machineSettings[0])
               ).bonus
             }
           </div>
@@ -229,11 +266,12 @@ export default function Machine({
         {debug ? (
           <div>Yield Probability: {(machineSettings[0] * 100).toFixed(2)}</div>
         ) : null}
-        {debug || machineMultKnown ? (
+        {debug ||
+        results.some((result) => result.result < machineSettings[0]) ? (
           <div>Multiplier: {machineSettings[1]}</div>
         ) : null}
         {debug ? <div>Seed: {seed}</div> : null}
-        {debug ? <div>Wins: {getWins(machineNum)}</div> : null}
+        {debug ? <div>Wins: {getWins(results, machineSettings[0])}</div> : null}
         <div className="flex flex-col gap-2 w-full items-center justify-center pb-4">
           <div>Number of Rolls: </div>
           <div className="font-arcade w-full text-center text-[32px]">
@@ -252,8 +290,9 @@ export default function Machine({
           <div className="font-arcade w-full text-center text-[32px]">
             {machineRolls !== 0
               ? (
-                  (results.filter((result) => result < machineSettings[0])
-                    .length /
+                  (results.filter(
+                    (result) => result.result < machineSettings[0]
+                  ).length /
                     machineRolls) *
                   100
                 ).toFixed(2) + "%"
@@ -263,4 +302,7 @@ export default function Machine({
       </div>
     </div>
   );
-}
+};
+
+Machine.displayName = "Machine";
+export default Machine;

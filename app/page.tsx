@@ -1,4 +1,4 @@
-import { useSession } from "next-auth/react";
+
 import LinkButton from "@components/LinkButton";
 import TutorialWindow from "@components/TutorialWindow";
 import Window from "@components/Window";
@@ -34,7 +34,7 @@ export default function Home() {
             Science where to model a person acquiring new knowledge as well as
             optimizing decisions based on existing knowledge.
           </div>
-          <LinkButton href="/play">Play Now</LinkButton>
+          <LinkButton href="/session/play">Play Now</LinkButton>
         </div>
       </Window>
     </main>

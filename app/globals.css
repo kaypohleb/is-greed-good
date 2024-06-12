@@ -268,11 +268,11 @@ ul li {
 }
 
 .reel {
-  width: 48px;
-  height: 48px;
+  width: 96px;
+  height: 96px;
   position: relative;
   overflow: hidden;
-  background-image: url(./assets/images/reel.png);
+  background-image: url(./assets/images/reel_big.png);
   background-position: 0 0;
   background-repeat: repeat-y;
 }

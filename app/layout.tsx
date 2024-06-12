@@ -1,12 +1,13 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import CoinLogo from "@assets/images/coin.png";
-import Providers from "./components/Providers";
+import Providers from "./providers/Providers";
 import GoogleSignInButton from "./components/SignInButton";
 import SoundIcon from "@assets/images/sound.png";
 import PrivacyIcon from "@assets/images/privacy.png";
 import Image from "next/image";
 import Link from "next/link";
+import Modal from "./components/Modal";
 
 export const metadata: Metadata = {
   title: "is greed good",
@@ -46,6 +47,7 @@ export default function RootLayout({
                 {new Date().toLocaleDateString()}
               </div>
             </div>
+            <Modal/>
           </nav>
           {children}
         </Providers>

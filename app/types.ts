@@ -1,19 +1,47 @@
-type User = {
+export type User = {
   id: string;
   name: string;
   email: string;
   password: string;
 };
 
+export type BetResult = {
+  bet: number;
+  result: number;
+};
+
+export type PlayState = {
+  id: string;
+  userPhase: number; //0:user betting 1: user ended
+  date: string;
+  updated: string;
+  userAmt: number;
+  betAmts: number[];
+  betResults: BetResult[][];
+  loyaltyStreaks: number[];
+  machineSettings: number[][];
+  machineSelected: number;
+  machineSeeds: string[];
+  machineRolls: number[];
+  greedStreak: string[];
+  luckiestStreak: string[];
+};
+
+export type DayPlayState = {
+  userId: string;
+  date: string;
+  playState: PlayState;
+};
+
 //session:by-user-id:[id]:[date]
 type DaySession = {
-    active: boolean; //if false, user has finished session
+  active: boolean; //if false, user has finished session
   date: string; //ISO date
   amt: number;
   seeds: string[];
   biggestLosses: number;
   biggestWins: number;
-  longestWinStreak: number;
+  longestgreedStreak: number;
   debug: boolean;
 };
 
@@ -36,4 +64,9 @@ type UserSessions = {
 type DayScores = {
   userId: string;
   score: number;
+};
+
+export type EventBusEvent = {
+  type: string;
+  data: string;
 };
