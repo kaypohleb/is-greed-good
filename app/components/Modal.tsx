@@ -14,10 +14,17 @@ export default function Modal() {
         setModal(<CelebrationModal coinAmt={parseInt(typedEvent.data)} />);
         setTimeout(() => {
           setModal(null);
-        }, 5000);
+        }, 10000);
       }
     });
   }, []);
 
-  return modal ? modal : null;
+  return modal ? (
+    <div
+      className="absolute w-full h-full top-0 left-0 z-[999]"
+      onClick={() => setModal(null)}
+    >
+      {modal}
+    </div>
+  ) : null;
 }
