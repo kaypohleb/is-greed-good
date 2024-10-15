@@ -1,14 +1,16 @@
 "use client";
-import { set } from "animejs";
 import { useEffect, useRef, useState } from "react";
 
-type CoinState = {
+type ArcCoinState = {
   x: number;
   y: number;
+  dx: number;
   dy: number;
   s: number;
   state: number;
 };
+
+const COIN_HEIGHT = 160;
 
 const CelebrationModal = ({ coinAmt }: { coinAmt: number }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -38,7 +40,7 @@ const CelebrationModal = ({ coinAmt }: { coinAmt: number }) => {
     //ctx.textAlign = "center";
     //ctx.fillText(`+${coinAmt} coins`, canvas.width / 2, canvas.height / 2);
     const coin = new Image();
-    const coins: CoinState[] = [];
+    const coins: ArcCoinState[] = [];
     coin.src = "/tick-coin-sprite.png";
     coin.onload = () => {
       //if (coins.length <= 0) return;
@@ -58,11 +60,13 @@ const CelebrationModal = ({ coinAmt }: { coinAmt: number }) => {
       }
 
       ctx.clearRect(0, 0, canvas.width, canvas.height);
+      
 
       if (Math.random() < 0.4 && coins.length < coinAmt) {
-        const newState: CoinState = {
+        const newState: ArcCoinState = {
           x: Math.random() * canvas.width, //random x position
-          y: -40, //start from bottom
+          y: 0, //start from bottom
+          dx: (Math.random() * 1 + 1) * (Math.random() < 0.5 ? -1 : 1), //random speed and direction
           dy: Math.random() * 2 + 1, //random speed
           s: Math.random() * 0.5 + 0.8, //random size
           state: 0,
@@ -77,16 +81,22 @@ const CelebrationModal = ({ coinAmt }: { coinAmt: number }) => {
         var s = coins[i].s;
         var state = coins[i].state;
         coins[i].state = state > 15 - 1 ? 0 : state + 0.1;
-        coins[i].dy += 0.01;
-        coins[i].y += coins[i].dy;
+        //slow down when close to bottom
+        coins[i].y = y + coins[i].dy;
+        coins[i].dy = y > canvas.height - COIN_HEIGHT ? 0 : coins[i].dy + 0.01;
+        //make x coins bounce off walls
+        coins[i].x = x + coins[i].dx;
+        if (x > canvas.width - COIN_HEIGHT || x < COIN_HEIGHT) {
+          coins[i].dx = -coins[i].dx;
+        }
 
         if (!coin) return;
         ctx.drawImage(
           coin,
-          160 * Math.floor(state),
+          COIN_HEIGHT * Math.floor(state),
           0,
-          160,
-          160,
+          COIN_HEIGHT,
+          COIN_HEIGHT,
           x,
           y,
           32 * s,

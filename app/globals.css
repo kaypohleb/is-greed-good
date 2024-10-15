@@ -268,11 +268,48 @@ ul li {
 }
 
 .reel {
-  width: 96px;
-  height: 96px;
+  width: 72px;
+  height: 72px;
   position: relative;
   overflow: hidden;
-  background-image: url(./assets/images/reel_big.png);
+  background-image: url(./assets/images/reel_mid.png);
   background-position: 0 0;
   background-repeat: repeat-y;
+}
+
+.road{
+  width: 288px;
+  height: 72px;
+  position: relative;
+  overflow: hidden;
+  background-image: url(./assets/images/road.png);
+  background-position: 0 0;
+  background-repeat: repeat-x;
+}
+
+.roadResult{
+  width: 72px;
+  height: 72px;
+  position: relative;
+  overflow: hidden;
+  background-image: url(./assets/images/truck.png);
+  background-position: 0 -72px;
+}
+
+.balloon{
+  width: 33px;
+  height: 33px;
+  position: relative;
+  overflow: hidden;
+  background-image: url(./assets/images/balloon.png);
+  background-size: cover;
+}
+
+.balloonbutt{
+  width: 33px;
+  height: 7px;
+  position: relative;
+  overflow: hidden;
+  background-image: url(./assets/images/balloon-butt.png);
+  background-position: 0 0;
 }

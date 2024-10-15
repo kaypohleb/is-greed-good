@@ -8,7 +8,9 @@ export const YIELD_MULTIPLIERS_PROBABILITIES: { [key: string]: number } = {
   5: 0.18,
   10: 0.09,
 };
+
 export const PROBALITIES_DECIMAL_PLACES = 2;
+
 const YIELD_VARIANCE = 2 / 3;
 const AVG_YIELD_VARIANCE = 5 / 6;
 
@@ -64,3 +66,4 @@ export function genYieldProbabilities(
   const min = max * YIELD_VARIANCE;
   return min + rng * (max - min);
 }
+

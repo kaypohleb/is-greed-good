@@ -3,10 +3,14 @@ import Button from "@/components/Button";
 import { BetResult } from "@/types";
 import { getRollsToWin } from "@/utils/bonus";
 import { WIN_COMBINATIONS, LOSS_COMBINATIONS } from "@/utils/yields";
-import { use, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { usePlayStateContext } from "@/providers/PlayStateProvider";
-import { ALLOWED_BET_AMOUNTS } from "@/constants";
+import Window from "./Window";
 import getWins from "@/utils/getWins";
+
+const NUM_OF_ICONS = 10;
+const ICON_HEIGHT = 72;
+const TIME_PER_ICON = 25;
 
 const Machine = ({
   machineNum,
@@ -33,18 +37,14 @@ const Machine = ({
 }) => {
   const { playState, forceUpdate, forcedGet, updatePlayState } =
     usePlayStateContext();
-
-  const numIcons = 10;
-  const iconHeight = 96;
-  const timePerIcon = 50;
   const reel1Ref = useRef<HTMLDivElement>(null);
   const reel2Ref = useRef<HTMLDivElement>(null);
   const reel3Ref = useRef<HTMLDivElement>(null);
   const [indexes, setIndexes] = useState([0, 0, 0]);
   const darkAgentIndex = [0, 2, 4, 6, 8];
   const lightAgentIndex = [1, 3, 5, 7, 9];
-
   const [rolling, setRolling] = useState(false);
+  const [betAmtInput, setBetAmtInput] = useState(machineBetAmt);
 
   function getRandomWinTargets() {
     const winCombinations =
@@ -85,16 +85,16 @@ const Machine = ({
   ): Promise<number> {
     const style = getComputedStyle(door);
     const backgroundPositionY = parseInt(style.backgroundPositionY);
-    const currentIndex = backgroundPositionY / iconHeight;
-    const delta = target - currentIndex + (offset + 2) * numIcons;
+    const currentIndex = backgroundPositionY / ICON_HEIGHT;
+    const delta = target - currentIndex + (offset + 2) * NUM_OF_ICONS;
     console.log("current", currentIndex, target, offset, delta);
     return new Promise((resolve, reject) => {
       // Target background position
       const targetBackgroundPositionY =
-        backgroundPositionY + delta * iconHeight;
+        backgroundPositionY + delta * ICON_HEIGHT;
       // Normalized background position, for reset
       const normTargetBackgroundPositionY =
-        targetBackgroundPositionY % (numIcons * iconHeight);
+        targetBackgroundPositionY % (NUM_OF_ICONS * ICON_HEIGHT);
       console.log(
         "target",
         target,
@@ -103,15 +103,15 @@ const Machine = ({
         normTargetBackgroundPositionY
       );
       // Delay animation with timeout, for some reason a delay in the animation property causes stutter
-      setTimeout(() => {
+      const currentRoll = setTimeout(() => {
         // Set transition properties ==> https://cubic-bezier.com/#.41,-0.01,.63,1.09
 
         door.style.transition = `background-position-y ${
-          (9 + 1 * delta) * timePerIcon
+          (9 + 1 * delta) * TIME_PER_ICON
         }ms cubic-bezier(.41,-0.01,.63,1.09)`;
         // Set background position
         door.style.backgroundPositionY = `${
-          backgroundPositionY + delta * iconHeight
+          backgroundPositionY + delta * ICON_HEIGHT
         }px`;
       }, offset * 75);
 
@@ -121,13 +121,12 @@ const Machine = ({
         door.style.transition = `none`;
         door.style.backgroundPositionY = `${normTargetBackgroundPositionY}px`;
         // Resolve this promise
-        resolve(delta % numIcons);
-      }, (9 + 1 * delta) * timePerIcon + offset * 75);
+        resolve(delta % NUM_OF_ICONS);
+      }, (9 + 1 * delta) * TIME_PER_ICON + offset * 75);
     });
   }
 
   function rollAll(result: number) {
-    setRolling(true);
     let targets = null;
     if (result < machineSettings[0]) {
       targets = getRandomWinTargets();
@@ -138,7 +137,7 @@ const Machine = ({
     }
 
     const reelsList = [reel1Ref, reel2Ref, reel3Ref];
-    // rig the outcome for every 3rd roll, if targets is set to null, the outcome will not get rigged by the roll function
+
     // When all reels done animating (all promises solve)]
     Promise
       // Activate each reel, must convert NodeList to Array for this with spread operator
@@ -155,7 +154,7 @@ const Machine = ({
         const updatedIndexes = [...indexes];
         deltas.forEach(
           (delta, i) =>
-            (updatedIndexes[i] = (updatedIndexes[i] + delta) % numIcons)
+            (updatedIndexes[i] = (updatedIndexes[i] + delta) % NUM_OF_ICONS)
         );
         setIndexes(updatedIndexes);
         console.log(machineNum, indexes, targets, result, machineBetAmt);
@@ -164,67 +163,47 @@ const Machine = ({
       });
   }
 
-  function increaseBetAmt(machineNumber: number) {
-    //increase to next amount based on ALLOWED_ROLL_AMOUNTS until the limit of rolls possible
+  function changeBetAmt(machineNumber: number, betAmt: number) {
     //return the highest possible roll amount if the user amount is less than the highest roll amount
     const updatedPlayState = { ...playState };
-    const maxRollsAmt =
-      ALLOWED_BET_AMOUNTS[ALLOWED_BET_AMOUNTS.length - 1] > playState.userAmt
-        ? playState.userAmt
-        : ALLOWED_BET_AMOUNTS[ALLOWED_BET_AMOUNTS.length - 1];
-
-    const rollAmtIndex = ALLOWED_BET_AMOUNTS.indexOf(
-      playState.betAmts[machineNumber]
-    );
-    //if index is not found, it must be the max roll amount
-    if (rollAmtIndex === -1) {
-      updatedPlayState.betAmts[machineNumber] = maxRollsAmt;
-    } else if (
-      rollAmtIndex + 1 < ALLOWED_BET_AMOUNTS.length &&
-      ALLOWED_BET_AMOUNTS[rollAmtIndex + 1] < maxRollsAmt
-    ) {
-      updatedPlayState.betAmts[machineNumber] =
-        ALLOWED_BET_AMOUNTS[rollAmtIndex + 1];
+    let updatedBetAmt = 0;
+    if (isNaN(betAmt)) {
+      updatedBetAmt = 1;
     } else {
-      updatedPlayState.betAmts[machineNumber] = maxRollsAmt;
+      if (betAmt > playState.userAmt) {
+        updatedBetAmt = playState.userAmt;
+      } else if (betAmt <= 0) {
+        updatedBetAmt = 1;
+      } else {
+        updatedBetAmt = betAmt;
+      }
     }
-    forceUpdate(updatedPlayState);
-  }
-
-  function decreaseBetAmt(machineNumber: number) {
-    //decrease to next amount based on ALLOWED_ROLL_AMOUNTS
-    const updatedPlayState = { ...playState };
-    const rollAmtIndex = ALLOWED_BET_AMOUNTS.indexOf(
-      playState.betAmts[machineNumber]
-    );
-    if (rollAmtIndex > 0) {
-      updatedPlayState.betAmts[machineNumber] =
-        ALLOWED_BET_AMOUNTS[rollAmtIndex - 1];
-    } else {
-      updatedPlayState.betAmts[machineNumber] = ALLOWED_BET_AMOUNTS[0];
-    }
+    updatedPlayState.betAmts[machineNumber] = updatedBetAmt;
+    setBetAmtInput(updatedBetAmt);
     forceUpdate(updatedPlayState);
   }
 
   return (
-    <div className="vintage-box mb-2">
-      <div className="vintage-box-inner flex flex-col gap-2 items-center p-4 font-ms">
-        <div className="relative flex w-[288px] bg-white border-2 border-black">
+    <Window title={`Machine ${machineNum}`}>
+      <div className="flex flex-col gap-2 items-center font-ms">
+        <div className="relative flex w-[216px] bg-white border-2 border-black">
           <div ref={reel1Ref} className="reel"></div>
           <div ref={reel2Ref} className="reel"></div>
           <div ref={reel3Ref} className="reel"></div>
         </div>
         <div className="flex justify-between w-full">
-          <Button
-            onClick={() => {
-              decreaseBetAmt(machineNum);
+          <input
+            type="number"
+            min="1"
+            value={betAmtInput}
+            max={playState.userAmt}
+            onChange={(e) => {
+              changeBetAmt(machineNum, parseInt(e.target.value));
             }}
-          >
-            -
-          </Button>
+          />
           <Button
+            disabled={rolling}
             onClick={() => {
-              if (rolling) return;
               const result = playBets(machineNum, machineBetAmt);
               if (typeof result === "number") {
                 rollAll(result);
@@ -235,10 +214,12 @@ const Machine = ({
           </Button>
           <Button
             onClick={() => {
-              increaseBetAmt(machineNum);
+              if (!rolling) {
+                changeBetAmt(machineNum, playState.userAmt);
+              }
             }}
           >
-            +
+            ALL IN
           </Button>
         </div>
         <div className="font-arcade text-black text-[20px]">
@@ -300,7 +281,7 @@ const Machine = ({
           </div>
         </div>
       </div>
-    </div>
+    </Window>
   );
 };
 

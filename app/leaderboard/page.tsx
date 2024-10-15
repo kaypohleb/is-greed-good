@@ -1,5 +1,5 @@
 //if not played today, redirect to play
-
+// TODO - Add a leaderboard page that shows the user's score, percentile, and betting style
 export default function Leaderboard() {
   return (
     <div>

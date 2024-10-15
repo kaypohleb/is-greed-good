@@ -1,7 +1,7 @@
 "use client";
 import { Dispatch, SetStateAction, useState } from "react";
 import seedrandom from "seedrandom";
-import Image, { StaticImageData } from "next/image";
+import Image from "next/image";
 import TickCoin from "@assets/images/tick-coin.gif";
 import CrossCoin from "@assets/images/cross-coin.gif";
 import VendingBaseImage from "@assets/images/vending-1.png";

@@ -10,12 +10,25 @@ export type BetResult = {
   result: number;
 };
 
+export type MiniState = {
+  id: string;
+  game: string;
+  difficulty: string;
+  date: string;
+  updated: string;
+  state: number;
+  currentMult: number;
+  format: string;
+};
+
 export type PlayState = {
   id: string;
+  difficulty: string;
   userPhase: number; //0:user betting 1: user ended
   date: string;
   updated: string;
   userAmt: number;
+  totalRolls: number;
   betAmts: number[];
   betResults: BetResult[][];
   loyaltyStreaks: number[];
@@ -23,8 +36,8 @@ export type PlayState = {
   machineSelected: number;
   machineSeeds: string[];
   machineRolls: number[];
-  greedStreak: string[];
   luckiestStreak: string[];
+  curMiniGame: MiniState;
 };
 
 export type DayPlayState = {

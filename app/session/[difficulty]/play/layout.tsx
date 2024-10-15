@@ -2,8 +2,10 @@ import PlayStateProvider from "@/providers/PlayStateProvider";
 
 export default function SessionLayout({
   children,
+  params,
 }: Readonly<{
   children: React.ReactNode;
+  params: { difficulty: string };
 }>) {
-  return <PlayStateProvider>{children}</PlayStateProvider>;
+  return <PlayStateProvider difficulty={params.difficulty}>{children}</PlayStateProvider>;
 }

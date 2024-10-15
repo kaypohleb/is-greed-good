@@ -34,6 +34,7 @@ export function usePlayStateContext() {
 }
 
 interface PlayStateProviderProps {
+  difficulty: string;
   children: React.ReactNode;
 }
 
@@ -61,6 +62,7 @@ const PlayStateProvider = (props: PlayStateProviderProps) => {
   const { data: session } = useSession();
 
   let userId = "randomUser";
+  let difficulty = props.difficulty;
 
   if (session && session.user && session.user.id) {
     userId = session.user.id;
@@ -68,7 +70,11 @@ const PlayStateProvider = (props: PlayStateProviderProps) => {
 
   const getDateString = useCallback(() => {
     const dt = new Date();
-    return `${dt.getFullYear()}-${dt.getMonth()}-${dt.getDate()}`;
+    return (
+      dt.getDate().toString() +
+      dt.getMonth().toString() +
+      dt.getFullYear().toString()
+    );
   }, []);
 
   const {
@@ -80,6 +86,21 @@ const PlayStateProvider = (props: PlayStateProviderProps) => {
   const [playState, setPlayState] = useState<PlayState | null>(null);
 
   useEffect(() => {
+    async function reintializeServer(user: string, playState: PlayState) {
+      if (user === "randomUser") return;
+      try {
+        await fetch(`/api/playState/${user}`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(playState),
+        });
+      } catch (error) {
+        console.error("Error updating PlayState", error);
+      }
+    }
+
     if (!serverPlayState && !error) {
       const storedPlayState: PlayState | null = JSON.parse(
         sessionStorage.getItem(`playState:${userId}`) || "null"
@@ -87,24 +108,26 @@ const PlayStateProvider = (props: PlayStateProviderProps) => {
       if (storedPlayState) {
         let updatedPlayState = storedPlayState;
         if (storedPlayState.date !== getDateString()) {
-          updatedPlayState = initializePlayState(userId);
+          updatedPlayState = initializePlayState(userId, difficulty);
         }
         setPlayState(updatedPlayState);
       } else {
-        setPlayState(initializePlayState(userId));
+        setPlayState(initializePlayState(userId, difficulty));
       }
     } else if (serverPlayState) {
       let updatedPlayState = serverPlayState;
       if (serverPlayState.date !== getDateString()) {
-        updatedPlayState = initializePlayState(userId);
+        console.log("Reinitializing playState");
+        updatedPlayState = initializePlayState(userId, difficulty);
+        reintializeServer(userId, updatedPlayState);
       }
-      setPlayState(serverPlayState);
+      setPlayState(updatedPlayState);
       sessionStorage.setItem(
         `playState:${userId}`,
-        JSON.stringify(serverPlayState)
+        JSON.stringify(updatedPlayState)
       ); // Cache user data in sessionStorage
     }
-  }, [serverPlayState, error, userId, getDateString]);
+  }, [serverPlayState, error, userId, getDateString, difficulty]);
 
   useEffect(() => {
     //sync current state in sessionStorage if userId is random
@@ -127,14 +150,14 @@ const PlayStateProvider = (props: PlayStateProviderProps) => {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(initializePlayState(user)),
+        body: JSON.stringify(initializePlayState(user, difficulty)),
       });
     }
 
     if (error && userId !== "randomUser") {
       initializeData(userId);
     }
-  }, [error, userId]);
+  }, [difficulty, error, userId]);
 
   const forcedGet = async () => {
     if (userId === "randomUser")
@@ -156,7 +179,7 @@ const PlayStateProvider = (props: PlayStateProviderProps) => {
   };
 
   const forceUpdate = async (newPlayState: PlayState) => {
-    setPlayState(newPlayState);
+    updatePlayState(newPlayState);
     if (userId === "randomUser") return;
     try {
       await fetch(`/api/playState/${userId}`, {
@@ -164,15 +187,15 @@ const PlayStateProvider = (props: PlayStateProviderProps) => {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(newPlayState),
+        body: JSON.stringify(playState),
       });
     } catch (error) {
       console.error("Error updating PlayState", error);
     }
   };
 
-  const updatePlayState = (newPlayState: PlayState) => {
-    setPlayState({ ...newPlayState, updated: new Date().toISOString() });
+  const updatePlayState = (state: PlayState) => {
+    setPlayState({ ...state, updated: new Date().toISOString() });
   };
 
   if (isLoading || !playState) return <div>Loading...</div>;

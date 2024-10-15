@@ -1,3 +1,5 @@
-export default function LeaderboardPage({ id }: { id: string }) {
-  return <div>{id}</div>;
+export default function LeaderboardPage({ params }: { 
+  params: { id: string }
+ }) {
+  return <div>{params.id}</div>;
 }

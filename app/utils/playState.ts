@@ -1,9 +1,12 @@
 import seedrandom from "seedrandom";
 import { genYieldMultiplier, genYieldProbabilities } from "./yields";
-import { ALLOWED_BET_AMOUNTS, MACHINE_NUMBER } from "@/constants";
+import { MACHINE_NUMBER, MINIGAMES } from "@/constants";
 import { PlayState } from "@/types";
 
-export const initializePlayState = (userId: string): PlayState => {
+export const initializePlayState = (
+  userId: string,
+  difficulty: string
+): PlayState => {
   const dateTime = new Date();
   const dt =
     dateTime.getDate().toString() +
@@ -26,15 +29,18 @@ export const initializePlayState = (userId: string): PlayState => {
       0
     );
   });
+  const randomMiniGame = MINIGAMES[Math.floor(rand() * MINIGAMES.length)];
 
   return {
     id: userId,
     userPhase: 0,
-    userAmt: 1000,
-    date: "",
-    updated: "",
+    difficulty: difficulty,
+    userAmt: 100,
+    totalRolls: 0,
+    date: dt,
+    updated: dateTime.toISOString(),
     betAmts: [...Array(MACHINE_NUMBER)].map(() => {
-      return ALLOWED_BET_AMOUNTS[0];
+      return 1;
     }),
     loyaltyStreaks: [...Array(MACHINE_NUMBER)].map(() => {
       return 0;
@@ -44,7 +50,16 @@ export const initializePlayState = (userId: string): PlayState => {
     machineSeeds: freshSeeds,
     machineRolls: [...Array(MACHINE_NUMBER)].map(() => 0),
     betResults: [...Array(MACHINE_NUMBER)].map(() => []),
-    greedStreak: [],
     luckiestStreak: [],
+    curMiniGame: {
+      id: userId,
+      game: randomMiniGame,
+      difficulty: difficulty,
+      date: dt,
+      updated: dateTime.toISOString(),
+      state: 0,
+      currentMult: 1,
+      format: "",
+    },
   };
 };
