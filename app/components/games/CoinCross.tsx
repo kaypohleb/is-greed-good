@@ -109,12 +109,6 @@ export function CoinCross({
       miniState.date + miniState.id + roadCrossed.toString()
     );
     const result = updatedRNG();
-    console.log(
-      "result",
-      result,
-      COINCROSS_PROBABILITY[difficultyIndex],
-      result < COINCROSS_PROBABILITY[difficultyIndex]
-    );
     if (result > COINCROSS_PROBABILITY[difficultyIndex]) {
       return new Promise((resolve, reject) => {
         setTimeout(() => {
@@ -197,6 +191,16 @@ export function CoinCross({
     }
   }
 
+  function stop(){
+    setGameState(2);
+    updateMiniGamePlayState({
+      ...miniState,
+      currentMult: 0,
+      state: 2,
+      format: roadCrossed.toString(),
+    });
+  }
+
   function resolveResult(res: Boolean) {
     if (res) {
       const updatedMult = getMultiplier(roadCrossed + 1)
@@ -212,7 +216,6 @@ export function CoinCross({
         format: (roadCrossed + 1).toString(),
       });
     } else {
-      console.log();
       setCurrentMultiplier(0);
       setGameState(2);
       updateMiniGamePlayState({
@@ -273,7 +276,7 @@ export function CoinCross({
         </div>
       )}
       <Button onClick={move}>MOVE</Button>
-      <Button>STOP</Button>
+      <Button onClick={stop}>STOP</Button>
     </div>
   );
 }

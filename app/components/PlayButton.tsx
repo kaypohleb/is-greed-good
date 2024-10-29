@@ -4,7 +4,14 @@ import { useState } from "react";
 import LinkButton from "./LinkButton";
 import Button from "./Button";
 
-export default function PlayButton() {
+export default function PlayButton(
+  {
+    mode,
+  }
+  :{
+    mode: string
+  }
+) {
   const [difficultyDrawerOpen, setDifficultyDrawerOpen] = useState(false);
   const debug = false
   return difficultyDrawerOpen ? (
@@ -12,7 +19,7 @@ export default function PlayButton() {
       {DIFFICULTY_LEVELS.map((difficulty, index) => (
         <LinkButton
           key={index}
-          href={`/session/${difficulty}/play${debug ? "?hiddendebug=true" : ""}`}
+          href={`/session/${mode}/${difficulty}/play${debug ? "?hiddendebug=true" : ""}`}
         >
           {difficulty}
         </LinkButton>

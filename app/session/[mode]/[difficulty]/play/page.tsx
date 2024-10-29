@@ -5,15 +5,25 @@ import { useKeenSlider } from "keen-slider/react";
 import Machine from "@/components/Machine";
 import { getRollsToWin } from "@/utils/bonus";
 import { useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import seedrandom from "seedrandom";
 import { KeenSliderInstance } from "keen-slider";
 import eventBus from "@/eventBus";
 import { BetResult, MiniState } from "@/types";
 import { usePlayStateContext } from "@/providers/PlayStateProvider";
-import { DAYS_OF_WEEK, DIFFICULTY_LEVELS, MACHINE_NUMBER } from "@/constants";
+import {
+  BASE_WEEK_REQ_BASED_DIFFICULTY,
+  DAYS_OF_WEEK,
+  DIFFICULTY_LEVELS,
+  MACHINE_NUMBER,
+  WEEK_REQ_MULTIPLIER,
+  WEEK_REQ_MULTIPLIER_SCALING,
+} from "@/constants";
 import getWins from "@/utils/getWins";
+import Window from "@/components/Window";
 import { Heist } from "@/components/games/Heist";
+import { CoinCross } from "@/components/games/CoinCross";
+import CoinBalloon from "@/components/games/CoinBalloon";
 
 const ResizePlugin = (slider: KeenSliderInstance) => {
   const observer = new ResizeObserver(function () {
@@ -27,12 +37,15 @@ const ResizePlugin = (slider: KeenSliderInstance) => {
     observer.unobserve(slider.container);
   });
 };
+
 export default function Play({ params }: { params: { difficulty: string } }) {
   const { playState, forceUpdate } = usePlayStateContext();
   const searchParams = useSearchParams();
 
   let debug = searchParams.get("hiddendebug") || false;
 
+  const [betAmtInput, setBetAmtInput] = useState(playState.betAmt || 1);
+  console.log(playState.betAmt);
   const [resultLoading, setResultLoading] = useState(false);
 
   const [sliderRef, instanceRef] = useKeenSlider(
@@ -66,6 +79,37 @@ export default function Play({ params }: { params: { difficulty: string } }) {
     [ResizePlugin]
   );
 
+  const weekRequirements = useMemo(() => {
+    const week = Math.floor(playState.totalRolls / DAYS_OF_WEEK) + 1;
+    const difficulty_index = DIFFICULTY_LEVELS.indexOf(playState.difficulty);
+    return Math.floor(
+      BASE_WEEK_REQ_BASED_DIFFICULTY[difficulty_index] +
+        (week - 1) *
+          (WEEK_REQ_MULTIPLIER[difficulty_index] +
+            (week - 1) * WEEK_REQ_MULTIPLIER_SCALING[difficulty_index])
+    );
+  }, [playState.totalRolls, playState.difficulty]);
+
+  function changeBetAmt(betAmt: number) {
+    //return the highest possible roll amount if the user amount is less than the highest roll amount
+    const updatedPlayState = { ...playState };
+    let updatedBetAmt = 0;
+    if (isNaN(betAmt) || betAmt == undefined) {
+      updatedBetAmt = 1;
+    } else {
+      if (betAmt > playState.userAmt) {
+        updatedBetAmt = playState.userAmt;
+      } else if (betAmt <= 0) {
+        updatedBetAmt = 1;
+      } else {
+        updatedBetAmt = betAmt;
+      }
+    }
+    updatedPlayState.betAmt = updatedBetAmt;
+    setBetAmtInput(updatedBetAmt);
+    forceUpdate(updatedPlayState);
+  }
+
   function playBets(machineSel: number, betAmts: number): number | undefined {
     if (
       playState.userPhase == 0 &&
@@ -88,14 +132,11 @@ export default function Play({ params }: { params: { difficulty: string } }) {
   }
 
   function appendResult(machineSel: number, result: number, betAmts: number) {
-    let tempWins =
-      getWins(
-        playState.betResults[machineSel],
-        playState.machineSettings[machineSel][0]
-      ) || 0;
+
     const updatedPlayState = { ...playState };
     updatedPlayState.machineSelected = machineSel;
     updatedPlayState.userAmt -= betAmts;
+
     updatedPlayState.totalRolls += 1;
     updatedPlayState.machineRolls[machineSel] += 1;
     updatedPlayState.machineSeeds[machineSel] =
@@ -122,13 +163,27 @@ export default function Play({ params }: { params: { difficulty: string } }) {
     if (result < updatedPlayState.machineSettings[machineSel][0]) {
       updatedPlayState.userAmt +=
         betAmts * updatedPlayState.machineSettings[machineSel][1];
-      const nextWinsBonus = getRollsToWin(
-        updatedPlayState.machineSettings[machineSel][1],
-        updatedPlayState.machineSettings[machineSel][0],
-        tempWins
-      );
-      if (tempWins + 1 == nextWinsBonus.nextWins) {
-        updatedPlayState.userAmt += nextWinsBonus.bonus;
+      // add rolls to win bonus
+      // const nextWinsBonus = getRollsToWin(
+      //   updatedPlayState.machineSettings[machineSel][1],
+      //   updatedPlayState.machineSettings[machineSel][0],
+      //   tempWins
+      // );
+      // if (tempWins + 1 == nextWinsBonus.nextWins) {
+      //   updatedPlayState.userAmt += nextWinsBonus.bonus;
+      // }
+    }
+
+    if (updatedPlayState.userAmt <= 0) {
+      updatedPlayState.userPhase = 2;
+    } else {
+      if (
+        updatedPlayState.totalRolls !== 0 &&
+        updatedPlayState.totalRolls % DAYS_OF_WEEK == 0 &&
+        updatedPlayState.userPhase == 0
+      ) {
+        console.log("week end");
+        updatedPlayState.userPhase = 1;
       }
     }
     forceUpdate(updatedPlayState);
@@ -138,21 +193,11 @@ export default function Play({ params }: { params: { difficulty: string } }) {
         type: "celebrate",
         data: `${updatedPlayState.machineSettings[machineSel][1] * betAmts}`,
       });
-    } else {
-      // check if user has lost all tokens
-      if (updatedPlayState.userAmt <= 0) {
-        forceUpdate({ ...updatedPlayState, userPhase: 2 });
-      }
     }
-    // check if user has played of a week
-    console.log(updatedPlayState.totalRolls % DAYS_OF_WEEK);
-    if (
-      updatedPlayState.totalRolls !== 0 &&
-      updatedPlayState.totalRolls % DAYS_OF_WEEK == 0
-    ) {
-      console.log("week end");
-      forceUpdate({ ...updatedPlayState, userPhase: 1 });
-    }
+  }
+
+  function returnToMachine() {
+    forceUpdate({ ...playState, userPhase: 0 });
   }
 
   useEffect(() => {
@@ -162,36 +207,30 @@ export default function Play({ params }: { params: { difficulty: string } }) {
   }, [params.difficulty, playState, forceUpdate]);
 
   useEffect(() => {
-    for (let i = 0; i < MACHINE_NUMBER; i++) {
-      if (playState.betAmts[i] > playState.userAmt) {
-        const updatedPlayState = { ...playState };
-        updatedPlayState.betAmts[i] = playState.userAmt;
-        forceUpdate(updatedPlayState);
-      }
+    if (playState.curMiniGame.state == 2) {
+      forceUpdate({
+        ...playState,
+        userPhase: 1,
+        curMiniGame: {
+          ...playState.curMiniGame,
+          game: "",
+          state: 0,
+          currentMult: 0,
+        },
+      });
+    }
+  });
+
+  useEffect(() => {
+    if (playState.betAmt > playState.userAmt) {
+      const updatedPlayState = { ...playState };
+      updatedPlayState.betAmt = playState.userAmt;
+      forceUpdate(updatedPlayState);
     }
   }, [playState, forceUpdate]);
 
   function updateMiniGamePlayState(state: MiniState) {
     forceUpdate({ ...playState, curMiniGame: state });
-  }
-
-  function renderMiniGame(gameId: string) {
-    switch (gameId) {
-      case "HEIST":
-        return (
-          <Heist
-            miniState={playState.curMiniGame}
-            updateMiniGamePlayState={updateMiniGamePlayState}
-          />
-        );
-      default:
-        return (
-          <Heist
-            miniState={playState.curMiniGame}
-            updateMiniGamePlayState={updateMiniGamePlayState}
-          />
-        );
-    }
   }
 
   return playState ? (
@@ -201,12 +240,16 @@ export default function Play({ params }: { params: { difficulty: string } }) {
       <div className="flex flex-col gap-1">
         <div className="font-arcade text-[24px] mt-4 flex flex-wrap justify-center gap-2">
           <div>Week</div>
-          <div>{Math.floor(playState.totalRolls / 5) + 1}</div>
+          <div>{Math.floor(playState.totalRolls / DAYS_OF_WEEK) + 1}</div>
+        </div>
+        <div className="font-arcade text-[24px] mt-4 flex flex-wrap justify-center gap-2">
+          <div>Week Requirements</div>
+          <div>{weekRequirements}</div>
         </div>
         {playState.userPhase == 0 ? (
           <div className="font-arcade text-[24px] mt-4 flex flex-wrap justify-center gap-2">
             <div>Rolls to next week </div>
-            <div>{5 - Math.floor(playState.totalRolls % 5)}</div>
+            <div>{5 - Math.floor(playState.totalRolls % DAYS_OF_WEEK)}</div>
           </div>
         ) : null}
         <div className="font-arcade text-[24px] mt-4 flex flex-wrap justify-center gap-2">
@@ -233,7 +276,7 @@ export default function Play({ params }: { params: { difficulty: string } }) {
                     machineRolls={playState.machineRolls[index]}
                     results={playState.betResults[index]}
                     playBets={playBets}
-                    machineBetAmt={playState.betAmts[index]}
+                    machineBetAmt={playState.betAmt}
                     loyaltyStreaks={playState.loyaltyStreaks[index]}
                     debug={debug}
                     seed={seed}
@@ -246,9 +289,29 @@ export default function Play({ params }: { params: { difficulty: string } }) {
         </div>
       ) : null}
       {/* Week End */}
-      {playState.userPhase == 1
-        ? renderMiniGame(playState.curMiniGame.id)
-        : null}
+      {playState.userPhase == 1 && playState.curMiniGame ? (
+        <Window title={playState.curMiniGame.game}>
+          {playState.curMiniGame.game == "HEIST" ? (
+            <Heist
+              miniState={playState.curMiniGame}
+              updateMiniGamePlayState={updateMiniGamePlayState}
+            />
+          ) : null}
+          {playState.curMiniGame.game == "COINCROSS" ? (
+            <CoinCross
+              miniState={playState.curMiniGame}
+              updateMiniGamePlayState={updateMiniGamePlayState}
+            />
+          ) : null}
+          {playState.curMiniGame.game == "COINBALLOON" ? (
+            <CoinBalloon
+              miniState={playState.curMiniGame}
+              updateMiniGamePlayState={updateMiniGamePlayState}
+            />
+          ) : null}
+          <Button onClick={returnToMachine}>RETURN</Button>
+        </Window>
+      ) : null}
       {/* End Game */}
       {playState.userPhase == 2 ? (
         <Button
@@ -259,6 +322,25 @@ export default function Play({ params }: { params: { difficulty: string } }) {
           I&apos;LL STOP HERE
         </Button>
       ) : null}
+      <input
+            className="w-[80px] text-black text-center border-2 px-2 border-black"
+            type="number"
+            min="1"
+            value={betAmtInput}
+            max={playState.userAmt}
+            onChange={(e) => {
+              changeBetAmt(parseInt(e.target.value));
+            }}
+          />
+          <Button
+            onClick={() => {
+              
+              changeBetAmt(playState.userAmt);
+              
+            }}
+          >
+            ALL IN
+          </Button>
     </div>
   ) : null;
 }

@@ -5,10 +5,14 @@ export default function SessionLayout({
   params,
 }: Readonly<{
   children: React.ReactNode;
-  params: { game: string; difficulty: string };
+  params: { game: string; mode: string; difficulty: string };
 }>) {
   return (
-    <MiniStateProvider difficulty={params.difficulty} game={params.game}>
+    <MiniStateProvider
+      difficulty={params.difficulty}
+      game={params.game}
+      mode={params.mode}
+    >
       {children}
     </MiniStateProvider>
   );

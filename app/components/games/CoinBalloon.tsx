@@ -4,8 +4,9 @@ import { MiniState } from "@/types";
 import BigNumber from "bignumber.js";
 import { useEffect, useState } from "react";
 import seedrandom from "seedrandom";
+import { DIFFICULTY_LEVELS } from "@/constants";
 
-const BALLOON_BASE_MULTIPLIER = 1.0;
+const BALLOON_BASE_MULTIPLIER = [1.0, 1.1, 1.2, 1.5];
 const BALLOON_BASE_SIZE = 36;
 const BALLOON_MAX_SIZE = 120;
 const BALLOON_SIZE_INCREMENT = 1;
@@ -21,9 +22,12 @@ export default function CoinBalloon({
   const [currentMiniGameState, setCurrentMiniGameState] = useState(miniState);
 
   const [balloonSize, setBalloonSize] = useState(
-    miniState.format ? parseInt(miniState.format) : 0
+    miniState.format
+      ? parseInt(miniState.format)
+      : BALLOON_BASE_MULTIPLIER[DIFFICULTY_LEVELS.indexOf(miniState.difficulty)]
   );
 
+  const [startingBet, setStartingBet] = useState();
   const [allowInflate, setAllowInflate] = useState(false);
   const [isInflating, setIsInflating] = useState(false);
 
@@ -43,7 +47,9 @@ export default function CoinBalloon({
   useEffect(() => {
     if (currentMiniGameState.state == 1 && allowInflate && isInflating) {
       setIsInflating(false);
-      const rand = seedrandom(miniState.date + miniState.id + balloonSize)();
+      const rand = seedrandom(
+        miniState.date + miniState.id + balloonSize.toString()
+      )();
       if (rand < 0.15) {
         setAllowInflate(false);
         setCurrentMiniGameState({
@@ -91,7 +97,9 @@ export default function CoinBalloon({
     <div>
       <h1>Coin Balloon</h1>
       <h2>State: {currentMiniGameState.state}</h2>
+      {startingBet ? <h2>Starting Bet: {startingBet}</h2> : null}
       <h2>Multiplier: {currentMiniGameState.currentMult}</h2>
+      {currentMiniGameState.state == 0 ? <div>Play</div> : null}
       <div className="flex items-center justify-center flex-col h-[100px] border-2 border-black ">
         <div
           className="balloon"

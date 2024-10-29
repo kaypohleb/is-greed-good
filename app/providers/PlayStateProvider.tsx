@@ -34,6 +34,7 @@ export function usePlayStateContext() {
 }
 
 interface PlayStateProviderProps {
+  mode: string;
   difficulty: string;
   children: React.ReactNode;
 }
@@ -46,9 +47,9 @@ const comparePlayStates = (a: PlayState | null, b: PlayState | null) => {
   return JSON.stringify(aRest) === JSON.stringify(bRest);
 };
 
-const playStateFetcher = async (userId: string) => {
+const playStateFetcher = async (userId: string, mode: string) => {
   if (userId === "randomUser") return null;
-  const res = await fetch(`/api/playState/${userId}`);
+  const res = await fetch(`/api/playState/${userId}/${mode}`);
   if (!res.ok) throw new Error("Failed to fetch playState");
   return res.json();
 };
@@ -62,7 +63,8 @@ const PlayStateProvider = (props: PlayStateProviderProps) => {
   const { data: session } = useSession();
 
   let userId = "randomUser";
-  let difficulty = props.difficulty;
+  let difficulty = props.difficulty || "CASUAL";
+  let mode = props.mode || "NORMAL";
 
   if (session && session.user && session.user.id) {
     userId = session.user.id;
@@ -73,23 +75,30 @@ const PlayStateProvider = (props: PlayStateProviderProps) => {
     return (
       dt.getDate().toString() +
       dt.getMonth().toString() +
-      dt.getFullYear().toString()
+      dt.getFullYear().toString() +
+      (mode !== "DAILY"
+        ? dt.getHours().toString() +
+          dt.getMinutes().toString() +
+          dt.getSeconds().toString()
+        : "")
     );
-  }, []);
+  }, [mode]);
 
   const {
     data: serverPlayState,
     isLoading,
     error,
-  } = useSWR(userId, playStateFetcher);
+  } = useSWR([userId, props.mode], ([id, mode]) =>  playStateFetcher(id, mode));
 
   const [playState, setPlayState] = useState<PlayState | null>(null);
 
+
+  //TODO FIX INITIALIZATION FOR DAILY AND NORMAL
   useEffect(() => {
     async function reintializeServer(user: string, playState: PlayState) {
       if (user === "randomUser") return;
       try {
-        await fetch(`/api/playState/${user}`, {
+        await fetch(`/api/playState/${user}/${mode}`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -103,67 +112,69 @@ const PlayStateProvider = (props: PlayStateProviderProps) => {
 
     if (!serverPlayState && !error) {
       const storedPlayState: PlayState | null = JSON.parse(
-        sessionStorage.getItem(`playState:${userId}`) || "null"
+        sessionStorage.getItem(`playState:${userId}:${mode}`) || "null"
       );
       if (storedPlayState) {
         let updatedPlayState = storedPlayState;
         if (storedPlayState.date !== getDateString()) {
-          updatedPlayState = initializePlayState(userId, difficulty);
+          updatedPlayState = initializePlayState(userId, difficulty, mode);
         }
         setPlayState(updatedPlayState);
       } else {
-        setPlayState(initializePlayState(userId, difficulty));
+        setPlayState(initializePlayState(userId, difficulty, mode));
       }
     } else if (serverPlayState) {
       let updatedPlayState = serverPlayState;
+      //if the date is different, reinitialize the playState except for randomUser
+      //TODO prevent reinitialization if not daily and refresh is within the same day
       if (serverPlayState.date !== getDateString()) {
         console.log("Reinitializing playState");
-        updatedPlayState = initializePlayState(userId, difficulty);
+        updatedPlayState = initializePlayState(userId, difficulty, mode);
         reintializeServer(userId, updatedPlayState);
       }
       setPlayState(updatedPlayState);
       sessionStorage.setItem(
-        `playState:${userId}`,
+        `playState:${userId}:${mode}`,
         JSON.stringify(updatedPlayState)
       ); // Cache user data in sessionStorage
     }
-  }, [serverPlayState, error, userId, getDateString, difficulty]);
+  }, [serverPlayState, error, userId, getDateString, difficulty, mode]);
 
   useEffect(() => {
     //sync current state in sessionStorage if userId is random
     const sessionPlayState: PlayState = JSON.parse(
-      sessionStorage.getItem(`playState:${userId}`) || "null"
+      sessionStorage.getItem(`playState:${userId}:${mode}`) || "null"
     );
     if (
       userId === "randomUser" &&
       playState &&
       !comparePlayStates(sessionPlayState, playState)
     ) {
-      sessionStorage.setItem(`playState:${userId}`, JSON.stringify(playState));
+      sessionStorage.setItem(`playState:${userId}:${mode}`, JSON.stringify(playState));
     }
   });
 
   useEffect(() => {
     async function initializeData(user: string) {
-      await fetch(`/api/playState/${user}`, {
+      await fetch(`/api/playState/${user}/${mode}`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(initializePlayState(user, difficulty)),
+        body: JSON.stringify(initializePlayState(user, difficulty, mode)),
       });
     }
 
     if (error && userId !== "randomUser") {
       initializeData(userId);
     }
-  }, [difficulty, error, userId]);
+  }, [difficulty, error, mode, userId]);
 
   const forcedGet = async () => {
     if (userId === "randomUser")
       throw new Error("Cannot force get for random user");
     try {
-      await fetch(`/api/playState/${userId}`, {
+      await fetch(`/api/playState/${userId}/${mode}`, {
         cache: "no-cache",
         method: "GET",
         headers: {
@@ -182,7 +193,7 @@ const PlayStateProvider = (props: PlayStateProviderProps) => {
     updatePlayState(newPlayState);
     if (userId === "randomUser") return;
     try {
-      await fetch(`/api/playState/${userId}`, {
+      await fetch(`/api/playState/${userId}/${mode}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",

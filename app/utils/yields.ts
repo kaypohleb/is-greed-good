@@ -66,4 +66,3 @@ export function genYieldProbabilities(
   const min = max * YIELD_VARIANCE;
   return min + rng * (max - min);
 }
-

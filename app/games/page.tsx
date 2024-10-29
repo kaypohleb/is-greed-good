@@ -23,17 +23,17 @@ export default function GameMenu() {
       <div className="flex flex-row gap-4 flex-wrap">
         <ImageLinkButton
           src={DummyImage}
-          href={`/games/HEIST/${difficulty}`}
+          href={`/games/HEIST/DAILY/{difficulty}/`}
           caption={"Heist"}
         />
         <ImageLinkButton
           src={DummyImage}
-          href={`/games/COINCROSS/${difficulty}`}
+          href={`/games/COINCROSS/DAILY/${difficulty}`}
           caption={"CoinCross"}
         />
         <ImageLinkButton
           src={DummyImage}
-          href={`/games/COINBALLOON/${difficulty}`}
+          href={`/games/COINBALLOON/DAILY/${difficulty}`}
           caption={"CoinFlip"}
         />
       </div>

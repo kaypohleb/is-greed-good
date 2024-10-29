@@ -313,3 +313,38 @@ ul li {
   background-image: url(./assets/images/balloon-butt.png);
   background-position: 0 0;
 }
+
+.floatInCircle {
+  animation: floatInCircle 2s infinite linear;
+  transition: translate 0.25s;
+}
+
+@keyframes floatInCircle {
+  0% {
+    transform: translate(5px,0);
+  }
+  12.5%{
+    transform: translate(3.54px, -3.54px);
+  }
+  25%{
+    transform: translate(0, -5px);
+  }
+  37.5%{
+    transform: translate(-3.54px, -3.54px);
+  }
+  50%{
+    transform: translate(-5px, 0);
+  }
+  62.5%{
+    transform: translate(-3.54px, 3.54px);
+  }
+  75%{
+    transform: translate(0px, 5px);
+  }
+  87.5%{
+    transform: translate(3.54px, 3.54px);
+  }
+  100%{
+    transform: translate(5px,0);
+  }
+}

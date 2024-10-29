@@ -5,13 +5,19 @@ import { PlayState } from "@/types";
 
 export const initializePlayState = (
   userId: string,
-  difficulty: string
+  difficulty: string,
+  mode: string
 ): PlayState => {
   const dateTime = new Date();
   const dt =
     dateTime.getDate().toString() +
     dateTime.getMonth().toString() +
-    dateTime.getFullYear().toString();
+    dateTime.getFullYear().toString() +
+    (mode !== "DAILY"
+      ? dateTime.getHours().toString() +
+        dateTime.getMinutes().toString() +
+        dateTime.getSeconds().toString()
+      : "");
   const rand = seedrandom(dt);
   const randPos = seedrandom(dt + userId);
   const freshSettings: number[][] = [...Array(MACHINE_NUMBER)]
@@ -34,14 +40,13 @@ export const initializePlayState = (
   return {
     id: userId,
     userPhase: 0,
+    mode: mode,
     difficulty: difficulty,
-    userAmt: 100,
+    userAmt: 10,
     totalRolls: 0,
     date: dt,
     updated: dateTime.toISOString(),
-    betAmts: [...Array(MACHINE_NUMBER)].map(() => {
-      return 1;
-    }),
+    betAmt: 1,
     loyaltyStreaks: [...Array(MACHINE_NUMBER)].map(() => {
       return 0;
     }),
@@ -53,7 +58,9 @@ export const initializePlayState = (
     luckiestStreak: [],
     curMiniGame: {
       id: userId,
-      game: randomMiniGame,
+      game: "HEIST", // randomMiniGame,
+      mode: mode,
+      currentBet: 0,
       difficulty: difficulty,
       date: dt,
       updated: dateTime.toISOString(),

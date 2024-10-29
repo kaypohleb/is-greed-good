@@ -7,6 +7,7 @@ import { useRef, useState } from "react";
 import { usePlayStateContext } from "@/providers/PlayStateProvider";
 import Window from "./Window";
 import getWins from "@/utils/getWins";
+import FillButton from "./FillButton";
 
 const NUM_OF_ICONS = 10;
 const ICON_HEIGHT = 72;
@@ -35,8 +36,6 @@ const Machine = ({
   playBets: (index: number, betAmt: number) => number | undefined;
   appendResult: (machineSel: number, result: number, betAmts: number) => void;
 }) => {
-  const { playState, forceUpdate, forcedGet, updatePlayState } =
-    usePlayStateContext();
   const reel1Ref = useRef<HTMLDivElement>(null);
   const reel2Ref = useRef<HTMLDivElement>(null);
   const reel3Ref = useRef<HTMLDivElement>(null);
@@ -44,7 +43,7 @@ const Machine = ({
   const darkAgentIndex = [0, 2, 4, 6, 8];
   const lightAgentIndex = [1, 3, 5, 7, 9];
   const [rolling, setRolling] = useState(false);
-  const [betAmtInput, setBetAmtInput] = useState(machineBetAmt);
+
 
   function getRandomWinTargets() {
     const winCombinations =
@@ -87,7 +86,7 @@ const Machine = ({
     const backgroundPositionY = parseInt(style.backgroundPositionY);
     const currentIndex = backgroundPositionY / ICON_HEIGHT;
     const delta = target - currentIndex + (offset + 2) * NUM_OF_ICONS;
-    console.log("current", currentIndex, target, offset, delta);
+    //console.log("current", currentIndex, target, offset, delta);
     return new Promise((resolve, reject) => {
       // Target background position
       const targetBackgroundPositionY =
@@ -95,13 +94,13 @@ const Machine = ({
       // Normalized background position, for reset
       const normTargetBackgroundPositionY =
         targetBackgroundPositionY % (NUM_OF_ICONS * ICON_HEIGHT);
-      console.log(
-        "target",
-        target,
-        delta,
-        targetBackgroundPositionY,
-        normTargetBackgroundPositionY
-      );
+      // console.log(
+      //   "target",
+      //   target,
+      //   delta,
+      //   targetBackgroundPositionY,
+      //   normTargetBackgroundPositionY
+      // );
       // Delay animation with timeout, for some reason a delay in the animation property causes stutter
       const currentRoll = setTimeout(() => {
         // Set transition properties ==> https://cubic-bezier.com/#.41,-0.01,.63,1.09
@@ -157,30 +156,10 @@ const Machine = ({
             (updatedIndexes[i] = (updatedIndexes[i] + delta) % NUM_OF_ICONS)
         );
         setIndexes(updatedIndexes);
-        console.log(machineNum, indexes, targets, result, machineBetAmt);
+        //console.log(machineNum, indexes, targets, result, machineBetAmt);
         appendResult(machineNum, result, machineBetAmt);
         setRolling(false);
       });
-  }
-
-  function changeBetAmt(machineNumber: number, betAmt: number) {
-    //return the highest possible roll amount if the user amount is less than the highest roll amount
-    const updatedPlayState = { ...playState };
-    let updatedBetAmt = 0;
-    if (isNaN(betAmt)) {
-      updatedBetAmt = 1;
-    } else {
-      if (betAmt > playState.userAmt) {
-        updatedBetAmt = playState.userAmt;
-      } else if (betAmt <= 0) {
-        updatedBetAmt = 1;
-      } else {
-        updatedBetAmt = betAmt;
-      }
-    }
-    updatedPlayState.betAmts[machineNumber] = updatedBetAmt;
-    setBetAmtInput(updatedBetAmt);
-    forceUpdate(updatedPlayState);
   }
 
   return (
@@ -192,16 +171,8 @@ const Machine = ({
           <div ref={reel3Ref} className="reel"></div>
         </div>
         <div className="flex justify-between w-full">
-          <input
-            type="number"
-            min="1"
-            value={betAmtInput}
-            max={playState.userAmt}
-            onChange={(e) => {
-              changeBetAmt(machineNum, parseInt(e.target.value));
-            }}
-          />
-          <Button
+        
+          <FillButton
             disabled={rolling}
             onClick={() => {
               const result = playBets(machineNum, machineBetAmt);
@@ -210,23 +181,18 @@ const Machine = ({
               }
             }}
           >
-            Bet {machineBetAmt}
-          </Button>
-          <Button
-            onClick={() => {
-              if (!rolling) {
-                changeBetAmt(machineNum, playState.userAmt);
-              }
-            }}
-          >
-            ALL IN
-          </Button>
+            SPIN
+          </FillButton>
+          {/* TODO add a percentage verticle drag slider for setting amount*/}
+          
         </div>
+        
+          
         <div className="font-arcade text-black text-[20px]">
           Machine {machineNum}
         </div>
 
-        <div className="flex flex-col gap-2 w-full items-center justify-center">
+        {/* <div className="flex flex-col gap-2 w-full items-center justify-center">
           <div>WINS to Bonus TOKENS</div>
           <div className="w-full text-center p-2 uppercase border-2 border-black bg-white">
             {getRollsToWin(
@@ -243,7 +209,7 @@ const Machine = ({
               ).bonus
             }
           </div>
-        </div>
+        </div> */}
         {debug ? (
           <div>Yield Probability: {(machineSettings[0] * 100).toFixed(2)}</div>
         ) : null}
@@ -259,12 +225,12 @@ const Machine = ({
             {machineRolls}
           </div>
         </div>
-        <div className="flex flex-col gap-2 w-full items-center justify-center">
+        {/* <div className="flex flex-col gap-2 w-full items-center justify-center">
           <div>Loyalty</div>
           <div className="font-arcade w-full text-center text-[32px]">
             {loyaltyStreaks}
           </div>
-        </div>
+        </div> */}
 
         <div className="flex flex-col gap-2 w-full items-center justify-center">
           <div>Your Win Rate:</div>

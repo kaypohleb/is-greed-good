@@ -12,6 +12,7 @@ import Image from "next/image";
 import { useEffect, useState } from "react";
 import seedrandom from "seedrandom";
 import StarImage from "@assets/images/Star-1.png";
+import { set } from "animejs";
 
 //game constants
 const HEIST_NUM_ROWS = 4;
@@ -33,9 +34,8 @@ export function Heist({
   updateMiniGamePlayState: (newState: MiniState) => void;
 }) {
   const rand = seedrandom(miniState.date + miniState.id);
-  const [currentMiniGameState, setCurrentMiniGameState] = useState<MiniState>(
-    miniState
-  );
+  const [currentMiniGameState, setCurrentMiniGameState] =
+    useState<MiniState>(miniState);
   const [grid, setGrid] = useState<number[][]>(
     currentMiniGameState.format === ""
       ? initializeMineGrid()
@@ -45,6 +45,7 @@ export function Heist({
 
   //0 = empty, 1 = thief, 2 = coin (+3 to any = collected)
   function initializeMineGrid() {
+    console.log("initializeMineGrid");
     let grid = [];
     for (let i = 0; i < HEIST_NUM_ROWS; i++) {
       let row = [];
@@ -79,7 +80,7 @@ export function Heist({
       updated: new Date().toISOString(),
     };
     //force update to playstate
-    updateMiniGamePlayState(updatedMiniGame);
+    setCurrentMiniGameState(updatedMiniGame);
     return grid;
   }
 
@@ -103,20 +104,19 @@ export function Heist({
     if (currentMiniGameState.state === 2) return;
     let updatedState = currentMiniGameState.state;
     let updatedMult = currentMiniGameState.currentMult;
-    console.log(`row: ${row}, col: ${col}`);
     if (grid[row][col] >= 3) return;
     if (grid[row][col] === 1) {
-      console.log("Game Over");
+      // thief
       updatedMult = 0;
       updatedState = 2;
     } else if (grid[row][col] === 2) {
-      console.log("Star Found");
+      // star
       const updatedBigNumber = new BigNumber(updatedMult);
       updatedMult = updatedBigNumber
         .plus(HEIST_BONUS[DIFFICULTY_LEVELS.indexOf(miniState.difficulty)])
         .toNumber();
     } else {
-      console.log("Empty");
+      // empty
       const updatedBigNumber = new BigNumber(updatedMult);
       updatedMult = updatedBigNumber
         .plus(
@@ -142,6 +142,7 @@ export function Heist({
   }
 
   useEffect(() => {
+    //check if all non-thief cells are collected
     if (grid.map((row) => row.every((cell) => cell >= 3)).every((val) => val)) {
       let updatedMiniGame: MiniState = {
         ...currentMiniGameState,
@@ -158,6 +159,18 @@ export function Heist({
     miniState.difficulty,
     updateMiniGamePlayState,
   ]);
+
+  useEffect(() => {
+    //update playstate if mismatch with curMiniGame
+    if (miniState.format !== gridToString(grid)) {
+      const updatedMiniGame: MiniState = {
+        ...currentMiniGameState,
+        format: gridToString(grid),
+        updated: new Date().toISOString(),
+      };
+      updateMiniGamePlayState(updatedMiniGame);
+    }
+  }, [miniState.format, grid, currentMiniGameState, updateMiniGamePlayState]);
 
   return (
     <div className="flex flex-col items-center justify-center gap-4 w-fit">
