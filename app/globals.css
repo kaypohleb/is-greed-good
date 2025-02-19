@@ -4,22 +4,22 @@
 
 @font-face {
   font-family: "CrayonLibre";
-  src: url(./assets/fonts/CrayonLibre.ttf);
+  src: url(../assets/fonts/CrayonLibre.ttf);
 }
 
 @font-face {
   font-family: "Microsoft Sans Serif";
-  src: url(./assets/fonts/MS-Sans-Serif.ttf);
+  src: url(../assets/fonts/MS-Sans-Serif.ttf);
 }
 
 @font-face {
   font-family: "Perfect DOS VGA";
-  src: url(./assets/fonts/Perfect-DOS-VGA.ttf);
+  src: url(../assets/fonts/Perfect-DOS-VGA.ttf);
 }
 
 @font-face {
   font-family: "Arcade Classic";
-  src: url(./assets/fonts/Arcade\ Classic.ttf);
+  src: url(../assets/fonts/Arcade\ Classic.ttf);
 }
 
 p {
@@ -272,7 +272,7 @@ ul li {
   height: 72px;
   position: relative;
   overflow: hidden;
-  background-image: url(./assets/images/reel_mid.png);
+  background-image: url(../assets/images/reel_mid.png);
   background-position: 0 0;
   background-repeat: repeat-y;
 }
@@ -282,7 +282,7 @@ ul li {
   height: 72px;
   position: relative;
   overflow: hidden;
-  background-image: url(./assets/images/road.png);
+  background-image: url(../assets/images/road.png);
   background-position: 0 0;
   background-repeat: repeat-x;
 }
@@ -292,7 +292,7 @@ ul li {
   height: 72px;
   position: relative;
   overflow: hidden;
-  background-image: url(./assets/images/truck.png);
+  background-image: url(../assets/images/truck.png);
   background-position: 0 -72px;
 }
 
@@ -301,7 +301,7 @@ ul li {
   height: 33px;
   position: relative;
   overflow: hidden;
-  background-image: url(./assets/images/balloon.png);
+  background-image: url(../assets/images/balloon.png);
   background-size: cover;
 }
 
@@ -310,7 +310,7 @@ ul li {
   height: 7px;
   position: relative;
   overflow: hidden;
-  background-image: url(./assets/images/balloon-butt.png);
+  background-image: url(../assets/images/balloon-butt.png);
   background-position: 0 0;
 }
 

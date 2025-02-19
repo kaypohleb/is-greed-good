@@ -1,7 +1,6 @@
 "use client";
-import LinkButton from "../components/LinkButton";
-import TutorialWindow from "../components/TutorialWindow";
-import Window from "../components/Window";
+import LinkButton from "@components/LinkButton";
+import Window from "@components/Window";
 import FallingSpriteBackground from "../components/FallingSpriteBackground";
 import { DIFFICULTY_LEVELS, GAME_MODE } from "./constants";
 import { useState } from "react";

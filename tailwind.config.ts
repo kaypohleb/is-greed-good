@@ -35,6 +35,7 @@ const config: Config = {
         DOS: ["Perfect DOS VGA"],
         arcade: ["Arcade Classic"],
       },
+      
     },
   },
   plugins: [],
