@@ -1,13 +1,13 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import CoinLogo from "@assets/images/coin.png";
-import Providers from "../providers/Providers";
-import GoogleSignInButton from "../components/SignInButton";
+import Providers from "@providers/Providers";
+import GoogleSignInButton from "@components/SignInButton";
 import SoundIcon from "@assets/images/sound.png";
 import PrivacyIcon from "@assets/images/privacy.png";
 import Image from "next/image";
 import Link from "next/link";
-import Modal from "../components/Modal";
+import Modal from "@components/Modal";
 import Head from "next/head";
 
 export const metadata: Metadata = {

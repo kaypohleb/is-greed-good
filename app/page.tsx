@@ -1,10 +1,10 @@
 "use client";
 import LinkButton from "@components/LinkButton";
 import Window from "@components/Window";
-import FallingSpriteBackground from "../components/FallingSpriteBackground";
+import FallingSpriteBackground from "@components/FallingSpriteBackground";
 import { DIFFICULTY_LEVELS, GAME_MODE } from "./constants";
 import { useState } from "react";
-import Button from "../components/Button";
+import Button from "@components/Button";
 
 export default function Home() {
   const [curGameMode, setCurGameMode] = useState("");

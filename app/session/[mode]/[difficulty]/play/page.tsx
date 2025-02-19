@@ -1,15 +1,15 @@
 "use client";
 import "keen-slider/keen-slider.min.css";
-import Button from "../../../../../components/Button";
+import Button from "@components/Button";
 import { useKeenSlider } from "keen-slider/react";
-import Machine from "../../../../../components/Machine";
+import Machine from "@components/Machine";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import seedrandom from "seedrandom";
 import { KeenSliderInstance } from "keen-slider";
 import eventBus from "@/eventBus";
 import { BetResult, MiniState } from "@/types";
-import { usePlayStateContext } from "../../../../../providers/PlayStateProvider";
+import { usePlayStateContext } from "@providers/PlayStateProvider";
 import {
   BASE_WEEK_REQ_BASED_DIFFICULTY,
   DAYS_OF_WEEK,
@@ -17,10 +17,10 @@ import {
   WEEK_REQ_MULTIPLIER,
   WEEK_REQ_MULTIPLIER_SCALING,
 } from "@/constants";
-import Window from "../../../../../components/Window";
-import { Heist } from "../../../../../components/games/Heist";
-import { CoinCross } from "../../../../../components/games/CoinCross";
-import CoinBalloon from "../../../../../components/games/CoinBalloon";
+import Window from "@components/Window";
+import { Heist } from "@components/games/Heist";
+import { CoinCross } from "@components/games/CoinCross";
+import CoinBalloon from "@components/games/CoinBalloon";
 
 const ResizePlugin = (slider: KeenSliderInstance) => {
   const observer = new ResizeObserver(function () {

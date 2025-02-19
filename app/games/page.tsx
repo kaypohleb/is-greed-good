@@ -1,9 +1,9 @@
 "use client";
 import DummyImage from "@assets/images/dummy_320x320_ffffff_cccccc.png";
-import ImageLinkButton from "../../components/ImageLinkButton";
+import ImageLinkButton from "@components/ImageLinkButton";
 import { DIFFICULTY_LEVELS } from "@/constants";
 import { useState } from "react";
-import Button from "../../components/Button";
+import Button from "@components/Button";
 export default function GameMenu() {
   const [difficulty, setDifficulty] = useState(DIFFICULTY_LEVELS[0]);
   return (

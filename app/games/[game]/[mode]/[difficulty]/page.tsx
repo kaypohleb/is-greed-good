@@ -1,10 +1,10 @@
 "use client";
-import { Heist } from "../../../../../components/games/Heist";
-import Window from "../../../../../components/Window";
-import { CoinCross } from "../../../../../components/games/CoinCross";
-import CoinBalloon from "../../../../../components/games/CoinBalloon";
-import { useMiniStateContext } from "../../../../../providers/MiniStateProvider";
-import Plinko from "../../../../../components/games/Plinko";
+import { Heist } from "@components/games/Heist";
+import Window from "@components/Window";
+import { CoinCross } from "@components/games/CoinCross";
+import CoinBalloon from "@components/games/CoinBalloon";
+import { useMiniStateContext } from "@providers/MiniStateProvider";
+import Plinko from "@components/games/Plinko";
 
 export default function MiniGame({
   params,
