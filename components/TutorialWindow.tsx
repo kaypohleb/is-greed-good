@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from "react";
-import Window from "@components/Window";
+import Window from "./Window";
 
 export default function TutorialWindow() {
     const [curStep, currentStep] = useState(0);

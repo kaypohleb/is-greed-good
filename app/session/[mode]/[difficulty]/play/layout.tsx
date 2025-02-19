@@ -1,4 +1,4 @@
-import PlayStateProvider from "@/providers/PlayStateProvider";
+import PlayStateProvider from "../../../../../providers/PlayStateProvider";
 
 export default function SessionLayout({
   children,

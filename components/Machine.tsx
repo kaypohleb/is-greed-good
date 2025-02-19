@@ -1,12 +1,12 @@
 "use client";
-import Button from "@/components/Button";
+import Button from "./Button";
 import { BetResult } from "@/types";
-import { getRollsToWin } from "@/utils/bonus";
-import { WIN_COMBINATIONS, LOSS_COMBINATIONS } from "@/utils/yields";
+import { getRollsToWin } from "../utils/bonus";
+import { WIN_COMBINATIONS, LOSS_COMBINATIONS } from "../utils/yields";
 import { useRef, useState } from "react";
-import { usePlayStateContext } from "@/providers/PlayStateProvider";
+import { usePlayStateContext } from "../providers/PlayStateProvider";
 import Window from "./Window";
-import getWins from "@/utils/getWins";
+import getWins from "../utils/getWins";
 import FillButton from "./FillButton";
 
 const NUM_OF_ICONS = 10;

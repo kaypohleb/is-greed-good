@@ -60,7 +60,7 @@ export const initializePlayState = (
       id: userId,
       game: "HEIST", // randomMiniGame,
       mode: mode,
-      currentBet: 0,
+      currentBet: 1,
       difficulty: difficulty,
       date: dt,
       updated: dateTime.toISOString(),

@@ -1,4 +1,4 @@
-import Button from "@/components/Button";
+import Button from "../Button";
 import { MiniState } from "@/types";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
@@ -6,7 +6,6 @@ import AgentCrossImage from "@assets/images/AgentCross.png";
 import { DIFFICULTY_LEVELS } from "@/constants";
 import seedrandom from "seedrandom";
 import BigNumber from "bignumber.js";
-import { set } from "animejs";
 
 const SHOWN_ROADS = 4;
 const TOTAL_ROADS = 6;
@@ -195,7 +194,6 @@ export function CoinCross({
     setGameState(2);
     updateMiniGamePlayState({
       ...miniState,
-      currentMult: 0,
       state: 2,
       format: roadCrossed.toString(),
     });

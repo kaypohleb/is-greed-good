@@ -1,29 +1,26 @@
 "use client";
 import "keen-slider/keen-slider.min.css";
-import Button from "@/components/Button";
+import Button from "../../../../../components/Button";
 import { useKeenSlider } from "keen-slider/react";
-import Machine from "@/components/Machine";
-import { getRollsToWin } from "@/utils/bonus";
+import Machine from "../../../../../components/Machine";
 import { useSearchParams } from "next/navigation";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import seedrandom from "seedrandom";
 import { KeenSliderInstance } from "keen-slider";
 import eventBus from "@/eventBus";
 import { BetResult, MiniState } from "@/types";
-import { usePlayStateContext } from "@/providers/PlayStateProvider";
+import { usePlayStateContext } from "../../../../../providers/PlayStateProvider";
 import {
   BASE_WEEK_REQ_BASED_DIFFICULTY,
   DAYS_OF_WEEK,
   DIFFICULTY_LEVELS,
-  MACHINE_NUMBER,
   WEEK_REQ_MULTIPLIER,
   WEEK_REQ_MULTIPLIER_SCALING,
 } from "@/constants";
-import getWins from "@/utils/getWins";
-import Window from "@/components/Window";
-import { Heist } from "@/components/games/Heist";
-import { CoinCross } from "@/components/games/CoinCross";
-import CoinBalloon from "@/components/games/CoinBalloon";
+import Window from "../../../../../components/Window";
+import { Heist } from "../../../../../components/games/Heist";
+import { CoinCross } from "../../../../../components/games/CoinCross";
+import CoinBalloon from "../../../../../components/games/CoinBalloon";
 
 const ResizePlugin = (slider: KeenSliderInstance) => {
   const observer = new ResizeObserver(function () {
@@ -45,7 +42,6 @@ export default function Play({ params }: { params: { difficulty: string } }) {
   let debug = searchParams.get("hiddendebug") || false;
 
   const [betAmtInput, setBetAmtInput] = useState(playState.betAmt || 1);
-  console.log(playState.betAmt);
   const [resultLoading, setResultLoading] = useState(false);
 
   const [sliderRef, instanceRef] = useKeenSlider(
@@ -91,7 +87,6 @@ export default function Play({ params }: { params: { difficulty: string } }) {
   }, [playState.totalRolls, playState.difficulty]);
 
   function changeBetAmt(betAmt: number) {
-    //return the highest possible roll amount if the user amount is less than the highest roll amount
     const updatedPlayState = { ...playState };
     let updatedBetAmt = 0;
     if (isNaN(betAmt) || betAmt == undefined) {
@@ -106,6 +101,8 @@ export default function Play({ params }: { params: { difficulty: string } }) {
       }
     }
     updatedPlayState.betAmt = updatedBetAmt;
+    updatedPlayState.curMiniGame.currentBet = updatedBetAmt;
+
     setBetAmtInput(updatedBetAmt);
     forceUpdate(updatedPlayState);
   }
@@ -132,7 +129,6 @@ export default function Play({ params }: { params: { difficulty: string } }) {
   }
 
   function appendResult(machineSel: number, result: number, betAmts: number) {
-
     const updatedPlayState = { ...playState };
     updatedPlayState.machineSelected = machineSel;
     updatedPlayState.userAmt -= betAmts;
@@ -183,9 +179,20 @@ export default function Play({ params }: { params: { difficulty: string } }) {
         updatedPlayState.userPhase == 0
       ) {
         console.log("week end");
-        updatedPlayState.userPhase = 1;
+        const updatedBetAmt = updatedPlayState.userAmt - weekRequirements;
+        updatedPlayState.userAmt = updatedBetAmt;
+        updatedPlayState.betAmt = updatedPlayState.userAmt;
+        updatedPlayState.curMiniGame.currentBet = updatedPlayState.userAmt;
+
+        if (updatedPlayState.userAmt <= 0) {
+          updatedPlayState.userPhase = 2;
+        } else {
+          updatedPlayState.userPhase = 1;
+        }
+        setBetAmtInput(updatedBetAmt);
       }
     }
+
     forceUpdate(updatedPlayState);
     setResultLoading(false);
     if (result < updatedPlayState.machineSettings[machineSel][0]) {
@@ -197,7 +204,19 @@ export default function Play({ params }: { params: { difficulty: string } }) {
   }
 
   function returnToMachine() {
-    forceUpdate({ ...playState, userPhase: 0 });
+    const updatedPlayState = { ...playState };
+    if (playState.curMiniGame.currentMult > 0) {
+      const wonAmt = Math.round(
+        playState.curMiniGame.currentMult * playState.curMiniGame.currentBet
+      );
+      updatedPlayState.userAmt += wonAmt;
+      eventBus.next({
+        type: "celebrate",
+        data: `x${playState.curMiniGame.currentMult} = ${wonAmt}`,
+      });
+    }
+    updatedPlayState.userPhase = 0;
+    forceUpdate(updatedPlayState);
   }
 
   useEffect(() => {
@@ -323,24 +342,22 @@ export default function Play({ params }: { params: { difficulty: string } }) {
         </Button>
       ) : null}
       <input
-            className="w-[80px] text-black text-center border-2 px-2 border-black"
-            type="number"
-            min="1"
-            value={betAmtInput}
-            max={playState.userAmt}
-            onChange={(e) => {
-              changeBetAmt(parseInt(e.target.value));
-            }}
-          />
-          <Button
-            onClick={() => {
-              
-              changeBetAmt(playState.userAmt);
-              
-            }}
-          >
-            ALL IN
-          </Button>
+        className="w-[80px] text-black text-center border-2 px-2 border-black"
+        type="number"
+        min="1"
+        value={betAmtInput}
+        max={playState.userAmt}
+        onChange={(e) => {
+          changeBetAmt(parseInt(e.target.value));
+        }}
+      />
+      <Button
+        onClick={() => {
+          changeBetAmt(playState.userAmt);
+        }}
+      >
+        ALL IN
+      </Button>
     </div>
   ) : null;
 }

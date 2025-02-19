@@ -10,7 +10,7 @@ import {
 } from "react";
 import { useSession } from "next-auth/react";
 import useSWR from "swr";
-import { initializeMiniState } from "@/utils/miniState";
+import { initializeMiniState } from "../utils/miniState";
 
 interface MiniStateContextProps {
   miniState: MiniState;
@@ -73,15 +73,17 @@ const MiniStateProvider = (props: MiniStateProviderProps) => {
 
   const getDateString = useCallback(() => {
     const dt = new Date();
-    return dt.getDate().toString() +
+    return (
+      dt.getDate().toString() +
       dt.getMonth().toString() +
       dt.getFullYear().toString() +
-      mode !==
-      "DAILY"
-      ? dt.getHours().toString() +
+      (mode !== "DAILY"
+        ? "|" +
+          dt.getHours().toString() +
           dt.getMinutes().toString() +
           dt.getSeconds().toString()
-      : "";
+        : "")
+    );
   }, [mode]);
 
   console.log("mode", mode, getDateString());
@@ -127,7 +129,7 @@ const MiniStateProvider = (props: MiniStateProviderProps) => {
       );
       if (storedMiniState) {
         let updatedMiniState = storedMiniState;
-        if (storedMiniState.date !== getDateString()) {
+        if (storedMiniState.date !== getDateString().split("|")[0]) {
           updatedMiniState = initializeMiniState(
             userId,
             difficulty,
@@ -142,7 +144,7 @@ const MiniStateProvider = (props: MiniStateProviderProps) => {
     } else if (serverMiniState) {
       let updatedMiniState = serverMiniState;
 
-      if (serverMiniState.date !== getDateString()) {
+      if (serverMiniState.date !== getDateString().split("|")[0]) {
         console.log("Reinitializing miniState");
         updatedMiniState = initializeMiniState(
           userId,

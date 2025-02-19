@@ -1,4 +1,4 @@
-import MiniStateProvider from "@/providers/MiniStateProvider";
+import MiniStateProvider from "../../../../../providers/MiniStateProvider";
 
 export default function SessionLayout({
   children,

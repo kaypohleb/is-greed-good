@@ -10,7 +10,7 @@ import {
 } from "react";
 import { useSession } from "next-auth/react";
 import useSWR from "swr";
-import { initializePlayState } from "@/utils/playState";
+import { initializePlayState } from "../utils/playState";
 
 interface PlayStateContextProps {
   playState: PlayState;
@@ -77,7 +77,8 @@ const PlayStateProvider = (props: PlayStateProviderProps) => {
       dt.getMonth().toString() +
       dt.getFullYear().toString() +
       (mode !== "DAILY"
-        ? dt.getHours().toString() +
+        ? "|" +
+          dt.getHours().toString() +
           dt.getMinutes().toString() +
           dt.getSeconds().toString()
         : "")
@@ -88,10 +89,9 @@ const PlayStateProvider = (props: PlayStateProviderProps) => {
     data: serverPlayState,
     isLoading,
     error,
-  } = useSWR([userId, props.mode], ([id, mode]) =>  playStateFetcher(id, mode));
+  } = useSWR([userId, props.mode], ([id, mode]) => playStateFetcher(id, mode));
 
   const [playState, setPlayState] = useState<PlayState | null>(null);
-
 
   //TODO FIX INITIALIZATION FOR DAILY AND NORMAL
   useEffect(() => {
@@ -116,7 +116,7 @@ const PlayStateProvider = (props: PlayStateProviderProps) => {
       );
       if (storedPlayState) {
         let updatedPlayState = storedPlayState;
-        if (storedPlayState.date !== getDateString()) {
+        if (storedPlayState.date !== getDateString().split("|")[0]) {
           updatedPlayState = initializePlayState(userId, difficulty, mode);
         }
         setPlayState(updatedPlayState);
@@ -127,7 +127,7 @@ const PlayStateProvider = (props: PlayStateProviderProps) => {
       let updatedPlayState = serverPlayState;
       //if the date is different, reinitialize the playState except for randomUser
       //TODO prevent reinitialization if not daily and refresh is within the same day
-      if (serverPlayState.date !== getDateString()) {
+      if (serverPlayState.date !== getDateString().split("|")[0]) {
         console.log("Reinitializing playState");
         updatedPlayState = initializePlayState(userId, difficulty, mode);
         reintializeServer(userId, updatedPlayState);
@@ -150,7 +150,10 @@ const PlayStateProvider = (props: PlayStateProviderProps) => {
       playState &&
       !comparePlayStates(sessionPlayState, playState)
     ) {
-      sessionStorage.setItem(`playState:${userId}:${mode}`, JSON.stringify(playState));
+      sessionStorage.setItem(
+        `playState:${userId}:${mode}`,
+        JSON.stringify(playState)
+      );
     }
   });
 

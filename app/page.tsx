@@ -1,11 +1,11 @@
 "use client";
-import LinkButton from "@components/LinkButton";
-import TutorialWindow from "@components/TutorialWindow";
-import Window from "@components/Window";
-import FallingSpriteBackground from "@components/FallingSpriteBackground";
+import LinkButton from "../components/LinkButton";
+import TutorialWindow from "../components/TutorialWindow";
+import Window from "../components/Window";
+import FallingSpriteBackground from "../components/FallingSpriteBackground";
 import { DIFFICULTY_LEVELS, GAME_MODE } from "./constants";
 import { useState } from "react";
-import Button from "./components/Button";
+import Button from "../components/Button";
 
 export default function Home() {
   const [curGameMode, setCurGameMode] = useState("");
@@ -71,6 +71,24 @@ export default function Home() {
           <hr />
           <LinkButton href="/games">Try MiniGames</LinkButton>
         </div>
+        <footer className="w-full h-12 flex gap-6 flex-wrap items-center justify-between py-2 px-4 font-ms">
+          <a 
+              className="flex items-center gap-2 hover:underline hover:underline-offset-4"
+            href="https://buymeacoffee.com/kaypohleb"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Buy me a coffee
+          </a>
+          <a
+            className="flex items-center gap-2 hover:underline hover:underline-offset-4"
+            href="https://kaypohleb.com"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            made by Caleb Foo
+          </a>
+        </footer>
       </Window>
     </main>
   );

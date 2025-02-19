@@ -1,4 +1,4 @@
-import Window from "@components/Window";
+import Window from "../../components/Window";
 export default function Privacy() {
   return (
     <main className="w-full h-screen-nav flex justify-center items-center">

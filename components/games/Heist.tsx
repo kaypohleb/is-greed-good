@@ -12,7 +12,7 @@ import Image from "next/image";
 import { useEffect, useState } from "react";
 import seedrandom from "seedrandom";
 import StarImage from "@assets/images/Star-1.png";
-import { set } from "animejs";
+import DarkAgentImage from "@assets/images/Dark-Agent.png";
 
 //game constants
 const HEIST_NUM_ROWS = 4;
@@ -36,6 +36,10 @@ export function Heist({
   const rand = seedrandom(miniState.date + miniState.id);
   const [currentMiniGameState, setCurrentMiniGameState] =
     useState<MiniState>(miniState);
+
+  const [currentBet, setCurrentBet] = useState<number>(
+    miniState.currentBet || 100
+  );
   const [grid, setGrid] = useState<number[][]>(
     currentMiniGameState.format === ""
       ? initializeMineGrid()
@@ -161,6 +165,12 @@ export function Heist({
   ]);
 
   useEffect(() => {
+    if (currentMiniGameState.state === 2) {
+      console.log("Game Over");
+    }
+  });
+
+  useEffect(() => {
     //update playstate if mismatch with curMiniGame
     if (miniState.format !== gridToString(grid)) {
       const updatedMiniGame: MiniState = {
@@ -173,19 +183,16 @@ export function Heist({
   }, [miniState.format, grid, currentMiniGameState, updateMiniGamePlayState]);
 
   return (
-    <div className="flex flex-col items-center justify-center gap-4 w-fit">
-      <div>Heist</div>
+    <div className="flex flex-col items-center justify-center gap-2 w-fit">
       <div>Current Multiplier : {currentMiniGameState.currentMult}</div>
-      <div className="flex">
-        <Image
-          src={StarImage}
-          alt="StarImage"
-          height={36}
-          className="m-[12px]"
-        />
+      <div className="flex items-center gap-2">
+        <Image src={StarImage} alt="StarImage" height={36} />
         <span>= BONUS</span>
       </div>
-      <div>Thief = Game Over</div>
+      <div className="flex items-center gap-2">
+        <Image src={DarkAgentImage} alt="" height={36} />
+        <span>= Game Over</span>
+      </div>
       <div className={gridCSS}>
         {[...Array(HEIST_NUM_ROWS)].map((_, row) => {
           return [...Array(HEIST_NUM_COLS)].map((_, col) => {
@@ -195,13 +202,15 @@ export function Heist({
                 onClick={() => selectBox(row, col)}
                 className="border-2 border-black  h-12 w-12 flex items-center justify-center rounded-sm"
               >
-                {grid[row][col] >= 3
-                  ? "F"
-                  : grid[row][col] === 1
-                  ? "T"
-                  : grid[row][col] === 2
-                  ? "S"
-                  : ""}
+                {grid[row][col] == 3 ? (
+                  ":)"
+                ) : grid[row][col] == 4 ? (
+                  <Image src={DarkAgentImage} alt="" height={36} />
+                ) : grid[row][col] == 5 ? (
+                  <Image src={StarImage} alt="" height={36} />
+                ) : (
+                  ""
+                )}
               </div>
             );
           });
