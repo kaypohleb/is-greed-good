@@ -21,6 +21,7 @@ export const initializeMiniState = (
     id: userId,
     game: game,
     mode: mode,
+    currentBet: 1,
     difficulty: difficulty,
     date: dt,
     updated: dateTime.toISOString(),
