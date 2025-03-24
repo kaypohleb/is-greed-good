@@ -11,7 +11,7 @@ export default function ImageLinkButton({
 }) {
   return (
     <a href={href} className="flex flex-col items-center gap-1">
-      <Image width={160} src={src} alt={caption} />
+      <Image width={120} src={src} alt={caption} />
       {caption ? <span className="font-arcade p-2 ">{caption}</span> : null}
     </a>
   );

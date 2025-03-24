@@ -27,7 +27,7 @@ export default function RootLayout({
       <Head>
         <meta name="viewport" content="width=device-width, initial-scale=1"></meta>
       </Head>
-      <body className="crt w-[100vw] h-[100vh]">
+      <body className="crt w-screen h-dvh">
         <Providers>
           <nav className="flex gap-4 py-[6px] px-2 items-center justify-between bg-silver border-b-2 border-black font-arcade shadow-md">
             <a href="/" className="flex items-center gap-1">

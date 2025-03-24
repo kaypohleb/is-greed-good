@@ -257,23 +257,22 @@ export default function Play({ params }: { params: { difficulty: string } }) {
       {debug ? <div>User: {playState.id}</div> : null}
       {debug ? <div>Difficulty: {playState.difficulty}</div> : null}
       <div className="flex flex-col gap-1">
-        <div className="font-arcade text-[24px] mt-4 flex flex-wrap justify-center gap-2">
+        <div className="font-arcade text-[24px] mt-4 flex flex-wrap justify-center gap-2 border-b-4 border-b-silver">
           <div>Week</div>
           <div>{Math.floor(playState.totalRolls / DAYS_OF_WEEK) + 1}</div>
         </div>
-        <div className="font-arcade text-[24px] mt-4 flex flex-wrap justify-center gap-2">
+        <div className="font-arcade text-[16px] p-2 mt-4 flex flex-wrap justify-center gap-2 border-2 border-b-silver">
           <div>Week Requirements</div>
           <div>{weekRequirements}</div>
         </div>
         {playState.userPhase == 0 ? (
-          <div className="font-arcade text-[24px] mt-4 flex flex-wrap justify-center gap-2">
-            <div>Rolls to next week </div>
-            <div>{5 - Math.floor(playState.totalRolls % DAYS_OF_WEEK)}</div>
+          <div className="font-arcade text-[24px] mt-4 flex flex-wrap justify-center gap-2 items-center">
+            <div>Rolls Left </div>
+            <div className="border-4 border-dashed p-2 border-silver">{5 - Math.floor(playState.totalRolls % DAYS_OF_WEEK)}</div>
           </div>
         ) : null}
         <div className="font-arcade text-[24px] mt-4 flex flex-wrap justify-center gap-2">
-          <div>TOKENS:</div>
-          <div>{playState.userAmt}</div>
+          <div>{playState.userAmt} TOKENS</div>
         </div>
       </div>
       {/* Normal Day */}

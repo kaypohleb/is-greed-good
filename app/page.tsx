@@ -10,7 +10,7 @@ export default function Home() {
   const [curGameMode, setCurGameMode] = useState("");
   const [difficultyDrawerOpen, setDifficultyDrawerOpen] = useState(false);
   return (
-    <main className="relative text-black w-full h-screen-nav flex flex-col items-center justify-center coinbg gap-4">
+    <main className="relative text-black w-full h-screen-nav flex flex-col items-center justify-center coinbg gap-4 p-4">
       <FallingSpriteBackground
         zIndex={-3}
         spriteXSize={160}
@@ -23,7 +23,7 @@ export default function Home() {
       />
       <Window title="" float>
         <div className="flex flex-col items-center justify-center coinbg gap-4 p-4">
-          <div className="text-[64px] font-arcade text-center border-black border py-2 px-4">
+          <div className="text-[40px] md:text-[64px] font-arcade text-center border-black border py-2 px-4 ">
             BEATING <br />
             THE HOUSE
           </div>

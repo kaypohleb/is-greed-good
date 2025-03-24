@@ -18,7 +18,7 @@ export default function Window({
   children: React.ReactNode;
 }) {
   const floatCSS = float ? "floatInCircle" : "";
-  const containerCSS = "bg-paper text-black window flex flex-col m-4 w-fit " + floatCSS;
+  const containerCSS = "bg-paper text-black window flex flex-col m-4 w-fit" + floatCSS;
   const bgColor = color === "white" ? "bg-white" : `bg-[${color}]`;
 
   const windowCSS = "window-body min-h-32 min-w-32 overflow-auto p-2 " + bgColor;

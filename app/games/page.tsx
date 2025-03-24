@@ -7,10 +7,10 @@ import Button from "@components/Button";
 export default function GameMenu() {
   const [difficulty, setDifficulty] = useState(DIFFICULTY_LEVELS[0]);
   return (
-    <div className="relative text-black w-full h-screen-nav flex flex-col items-center justify-center gap-4">
+    <div className="relative text-black w-full h-screen-nav flex flex-col items-center justify-center gap-4 p-4">
       <div className="text-center uppercase font-arcade text-[24px]">Select Difficulty</div>
       
-      <div className="flex flex-row flex-wrap gap-1">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 items-center justify-center">
         {DIFFICULTY_LEVELS.map((diff) => {
           return (
             <Button key={`button-${diff}`} onClick={() => setDifficulty(diff)}>
@@ -20,7 +20,7 @@ export default function GameMenu() {
         })}
       </div>
       <div className="text-center font-arcade">{difficulty}</div>
-      <div className="flex flex-row gap-4 flex-wrap">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 flex-wrap justify-center items-center">
         <ImageLinkButton
           src={DummyImage}
           href={`/games/HEIST/DAILY/${difficulty}/`}
