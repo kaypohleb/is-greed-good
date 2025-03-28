@@ -1,4 +1,5 @@
 # BEATING THE HOUSE
+![image](https://github.com/user-attachments/assets/71c91437-41f1-40cf-9ef4-d94fde6ef728)
 http://beating-the-house.vercel.app/
 ## Overview
 Welcome to BEATING THE HOUSE, an exciting web-based game where you use your wit, luck, and skill to outsmart the house. Each decision you make presents uncertainties and outcomes, offering a unique experience every time you play. Whether you rely on pure luck or harness your strategic abilities, your journey to beat the house is filled with twists and turns!
