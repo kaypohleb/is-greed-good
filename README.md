@@ -1,6 +1,29 @@
-This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# BEATING THE HOUSE
+http://beating-the-house.vercel.app/
+## Overview
+Welcome to BEATING THE HOUSE, an exciting web-based game where you use your wit, luck, and skill to outsmart the house. Each decision you make presents uncertainties and outcomes, offering a unique experience every time you play. Whether you rely on pure luck or harness your strategic abilities, your journey to beat the house is filled with twists and turns!
+
+Luck may roll the slots, but your effort is what controls the ultimate outcome. Can you beat the house and walk away victorious?
+
+## Features
+Dynamic Choices: Every decision impacts your chances, combining elements of luck and strategy.
+
+Interactive Gameplay: Engage with various in-game elements designed to test your decision-making skills.
+
+Unpredictable Outcomes: Embrace uncertainty as each choice leads to different outcomes, ensuring no two games are ever the same.
+
+## Rules
+Luck: Some choices involve a gamble, where randomness will play a role in determining your success.
+
+Rewards and Risks: Each round offers different rewards or risks, so make sure to evaluate your choices carefully.
+
+## Tips
+Take Your Time: Although some choices may seem simple, they can have far-reaching effects. Think about the consequences before you act.
+
+Balance Luck and Skill: A purely lucky strategy might work for a while, but your efforts and skills will be what sustain you in the long run.
 
 ## Getting Started
+
 
 First, run the development server:
 
